@@ -1,11 +1,14 @@
 import React from 'react';
-import { Title } from './Title';
+import Title from './Title';
 import { connect } from 'react-redux'
 
-let Game = () => {
+let Game = ({ screen }: any) => {
   return (
     <div>
-      <Title />
+      Current screen: {screen}
+      <div className="full-screen center-vert">
+        {screen === 'title' && <Title />}
+      </div>
     </div>
   );
 }

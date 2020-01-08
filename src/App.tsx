@@ -1,10 +1,12 @@
 import React from 'react';
 import './App.scss';
-import { Game } from './Game';
+import Game from './Game';
 
 function App() {
   return (
-    <Game/>
+    <div className="App-main">
+      <Game/>
+    </div>
   );
 }
 

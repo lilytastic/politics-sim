@@ -12,7 +12,10 @@ const initialState = {
 };
 
 function rootReducer(state = initialState, action: any) {
+  console.log(action, state);
   switch (action.type) {
+    case 'CHANGE_SCREEN':
+      return {...state, screen: action.screen};
     default:
       return state;
   }

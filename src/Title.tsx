@@ -1,26 +1,30 @@
 import React from 'react';
 import { connect } from 'react-redux'
+import { changeScreen, loadSave } from './actionCreators';
 
-function startGame() {
-  console.log('start game');
-}
-function loadGame() {
-  console.log('load game');
-}
-
-export const Title = () => {
+const Title = ({ dispatch, screen }: any) => {
+  let saveData = window.localStorage['saveData'];
+  if (saveData) {saveData = JSON.parse(saveData);}
+  const startGame = () => {
+    dispatch(changeScreen('game'));
+  }
+  const loadGame = () => {
+    // Load whatever save data is in the thing
+    dispatch(loadSave(saveData));
+    dispatch(changeScreen('game'));
+  }
   return (
-    <header className="App-header">
-      <h1>RHIZ</h1>
+    <div>
+      <h1>Title</h1>
       <ul className="text-center">
         <li>
-          <button onClick={startGame} className="btn btn-primary">New Game</button>
+          <button onClick={startGame} className="btn btn-primary">New</button>
         </li>
         <li>
-          <button onClick={loadGame} className="btn btn-primary">Load Game</button>
+          <button disabled={!saveData} onClick={loadGame} className="btn btn-primary">Load</button>
         </li>
       </ul>
-    </header>
+    </div>
   );
 }
 
@@ -29,9 +33,8 @@ const mapStateToProps = (state: any /*, ownProps*/) => {
     screen: state.screen
   }
 };
-const mapDispatchToProps = { }
 
 export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-);
+  mapStateToProps
+)(Title);
+
