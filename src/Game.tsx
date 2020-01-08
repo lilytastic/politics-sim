@@ -6,8 +6,8 @@ let Game = ({ screen }: any) => {
   return (
     <div>
       Current screen: {screen}
-      <div className="full-screen center-vert">
-        {screen === 'title' && <Title />}
+      <div className="center-vert">
+        Yeet
       </div>
     </div>
   );

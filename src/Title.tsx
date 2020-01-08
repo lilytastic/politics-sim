@@ -1,17 +1,19 @@
 import React from 'react';
 import { connect } from 'react-redux'
 import { changeScreen, loadSave } from './actionCreators';
+import { useLocation, useHistory } from 'react-router-dom';
 
 const Title = ({ dispatch, screen }: any) => {
   let saveData = window.localStorage['saveData'];
+  let history = useHistory();
   if (saveData) {saveData = JSON.parse(saveData);}
   const startGame = () => {
-    dispatch(changeScreen('game'));
+    history.push('/game');
   }
   const loadGame = () => {
     // Load whatever save data is in the thing
     dispatch(loadSave(saveData));
-    dispatch(changeScreen('game'));
+    history.push('/game');
   }
   return (
     <div>
