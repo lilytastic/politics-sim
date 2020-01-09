@@ -1,5 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux'
+import { interval } from 'rxjs';
+import { changeCurrentPhase, changeCurrentPhaseCountdown } from './actionCreators';
 
 interface Politician {
   name: string;
@@ -12,11 +14,31 @@ interface PoliticalPosition {
   passion: number;
 }
 
-let Game = ({ phase }: any) => {
-  return (
+// Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
+
+class Game extends React.Component {
+  props: any;
+
+  constructor(props: any) {
+    super(props);
+
+    interval(1000).subscribe(x => {
+      this.onTick();
+    });
+  }
+
+  onTick() {
+    if (this.props.currentPhaseCountdown >= this.props.phase?.countdown) {
+      this.props.dispatch(changeCurrentPhase((this.props.currentPhase + 1) % this.props.phases.length));
+    } else {
+      this.props.dispatch(changeCurrentPhaseCountdown(this.props.currentPhaseCountdown + 1));
+    }
+  }
+
+  render = () => (
     <div className="p-5">
       <div className="mb-4">
-        Current Phase: {phase.name} ({phase.countdown}s)
+        Current Phase: {this.props.phase?.name} ({this.props.phase?.countdown - this.props.currentPhaseCountdown}s)
       </div>
       <div className="row">
         <div className="col">
@@ -30,24 +52,26 @@ let Game = ({ phase }: any) => {
           ))}
         </div>
         <div className="col">
-          
+
         </div>
       </div>
     </div>
   );
+
 }
 
 const mapStateToProps = (state: any) => {
   return {
     phase: state.phases[state.currentPhase || 0],
+    phases: state.phases,
+    currentPhaseCountdown: state.currentPhaseCountdown,
+    currentPhase: state.currentPhase,
     screen: state.screen
   }
 };
-const mapDispatchToProps = { }
 
 export default connect(
-  mapStateToProps,
-  mapDispatchToProps
+  mapStateToProps
 )(Game);
 
 

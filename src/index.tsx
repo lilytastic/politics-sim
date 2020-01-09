@@ -10,14 +10,18 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const initialState = {
   screen: 'title',
   phases: [{name: 'table', countdown: 60}, {name: 'debate', countdown: 60}, {name: 'vote', countdown: 60}],
-  currentPhase: 0
+  currentPhase: 0,
+  currentPhaseCountdown: 0
 };
 
 function rootReducer(state = initialState, action: any) {
-  console.log(action, state);
   switch (action.type) {
     case 'CHANGE_SCREEN':
       return {...state, screen: action.screen};
+    case 'CHANGE_CURRENT_PHASE':
+      return {...state, currentPhase: action.currentPhase, currentPhaseCountdown: 0};
+    case 'CHANGE_CURRENT_PHASE_COUNTDOWN':
+      return {...state, currentPhaseCountdown: action.currentPhaseCountdown};
     default:
       return state;
   }
