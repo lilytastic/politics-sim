@@ -11,5 +11,8 @@ export const changeCurrentPhaseCountdown = (currentPhaseCountdown: number) => ({
   type: 'CHANGE_CURRENT_PHASE_COUNTDOWN',
   currentPhaseCountdown
 });
+export const refreshAvailableMotions = () => ({
+  type: 'REFRESH_AVAILABLE_MOTIONS'
+});
 
 export const loadSave = (data: any) => ({type: 'LOAD_SAVE', data})
