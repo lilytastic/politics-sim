@@ -9,14 +9,22 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 const initialState = {
   screen: 'title',
-  availableMotions: [{name: 'Motion 1', effects: [{stat: 'faith', amount: 0}]}],
+  availableMotions: [{id: 0, name: 'Motion 1', effects: [{stat: 'faith', amount: 0}]}],
+  motionsTabled: [{id: 1, tabledBy: 1}],
+  motionVotes: [{id: 1, voters: [{id: 3, type: 'bought'}]}], // type can be 'motivated', 'bought', 'respect'
   phases: [{name: 'table', countdown: 60}, {name: 'debate', countdown: 60}, {name: 'vote', countdown: 60}],
   currentPhase: 0,
   currentPhaseCountdown: 0
 };
 
 function rootReducer(state = initialState, action: any) {
+  console.log(action);
   switch (action.type) {
+    case 'TABLE_MOTION':
+      return {...state, motionsTabled: [...state.motionsTabled, {id: action.motion, tabledBy: action.tabledBy}]};
+    case 'RESCIND_MOTION':
+      let index = state.motionsTabled.findIndex(x => x.id === action.motion);
+      return {...state, motionsTabled: [...state.motionsTabled.slice(0, index), ...state.motionsTabled.slice(index + 1)]};
     case 'CHANGE_SCREEN':
       return {...state, screen: action.screen};
     case 'CHANGE_CURRENT_PHASE':
@@ -35,8 +43,10 @@ function rootReducer(state = initialState, action: any) {
           });
         }
         motions.push({
+          id: i,
           name: 'Motion ' + (i+1),
-          effects: effects
+          effects: effects,
+          costToTable: effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) * 20
         });
       }
       return {...state, availableMotions: motions};

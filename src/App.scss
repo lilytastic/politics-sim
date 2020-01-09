@@ -12,6 +12,10 @@ ul {
   list-style-type: none;
 }
 
+.tabled {
+  box-shadow: 0 0 0 3px lime;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
