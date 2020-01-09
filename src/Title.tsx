@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux'
-import { changeScreen, loadSave } from './actionCreators';
-import { useLocation, useHistory } from 'react-router-dom';
+import { loadSave } from './actionCreators';
+import { useHistory } from 'react-router-dom';
 
 const Title = ({ dispatch, screen }: any) => {
   let saveData = window.localStorage['saveData'];
@@ -16,7 +16,7 @@ const Title = ({ dispatch, screen }: any) => {
     history.push('/game');
   }
   return (
-    <div>
+    <div className="center-vert full-screen">
       <h1>Title</h1>
       <ul className="text-center">
         <li>

@@ -8,7 +8,9 @@ import * as serviceWorker from './serviceWorker';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const initialState = {
-  screen: 'title'
+  screen: 'title',
+  phases: [{name: 'table', countdown: 60}, {name: 'debate', countdown: 60}, {name: 'vote', countdown: 60}],
+  currentPhase: 0
 };
 
 function rootReducer(state = initialState, action: any) {

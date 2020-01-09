@@ -4,8 +4,7 @@ import Game from './Game';
 import {
   BrowserRouter as Router,
   Switch,
-  Route,
-  Link
+  Route
 } from 'react-router-dom';
 import Title from './Title';
 
