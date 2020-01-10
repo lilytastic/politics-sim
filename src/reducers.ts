@@ -52,6 +52,8 @@ export function rootReducer(state = initialState, action: any): State {
           return actor;
         }
       }) };
+    case 'PASS_MOTION':
+      return {...state, settlementData: state.settlementData.map((x: any) => ({...x, edicts: [...x.edicts, action.motion]}))}
     case 'CHANGE_VOTE':
       return {
         ...state,

@@ -1,4 +1,5 @@
 import { Actor } from "./actor.model";
+import { Motion } from "./reducers";
 
 export const changeScreen = (screen: string) => ({
   type: 'CHANGE_SCREEN',
@@ -14,6 +15,11 @@ export const changeCurrentPhaseCountdown = (currentPhaseCountdown: number) => ({
 });
 export const refreshAvailableMotions = () => ({
   type: 'REFRESH_AVAILABLE_MOTIONS'
+});
+
+export const passMotion = (motion: Motion) => ({
+  type: 'PASS_MOTION',
+  motion
 });
 
 export const tableMotion = (motion: number, tabledBy: number) => ({

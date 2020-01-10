@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux'
 import { interval } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote } from './actionCreators';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote, passMotion } from './actionCreators';
 import { Actor } from './actor.model';
 import { Motion } from './reducers';
 
@@ -51,6 +51,18 @@ class Game extends React.Component {
       return;
     }
     if (currentPhase?.name === 'vote') {
+      this.props.availableMotions
+        .filter((motion: Motion) => this.isTabled(motion.id))
+        .forEach((motion: Motion) => {
+          const yea = this.props.actors
+            ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0;
+          const nay = this.props.actors
+            ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0;
+          console.log(`Vote for ${motion.name}: ${yea} Yea, ${nay} Nay`);
+          if (yea > nay) {
+            this.props.dispatch(passMotion(motion));
+          }
+        });
       this.returnToTablePhase();
     }
 
