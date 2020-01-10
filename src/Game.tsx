@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux'
-import { interval } from 'rxjs';
+import { interval, timer } from 'rxjs';
 import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote, passMotion } from './actionCreators';
 import { Actor } from './actor.model';
 import { Motion } from './reducers';
@@ -25,6 +25,18 @@ class Game extends React.Component {
   returnToTablePhase = () => {
     this.grantAllowance();
     this.props.dispatch(refreshAvailableMotions());
+    timer(5000).subscribe(() => {
+      console.log('checking table preference');
+      this.props.actors.forEach((actor: Actor) => {
+        this.props.availableMotions.forEach((motion: Motion) => {
+          const approval = this.getActorApproval(actor, motion);
+          console.log(approval);
+          if (approval > 2.5) {
+            this.table(motion.id, actor.id);
+          }
+        });
+      });
+    });
   }
 
   grantAllowance = () => {
@@ -103,10 +115,10 @@ class Game extends React.Component {
     const actor = this.props.actors.find((x: Actor) => x.id === actorId);
     console.log('tabling', motion);
     if (!tabled && actor.capital >= motion.costToTable) {
-      this.props.dispatch(tableMotion(motionId, 0));
+      this.props.dispatch(tableMotion(motionId, actor.id));
       this.props.dispatch(changeVote(actor.id, motionId, 'yea', 'freely'));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital - motion.costToTable}}]));
-    } else if (!!tabled && tabled.tabledBy === 0) {
+    } else if (!!tabled && tabled.tabledBy === actor.id) {
       this.props.dispatch(rescindMotion(motionId));
       this.props.dispatch(changeVote(actor.id, motionId, 'abstain', 'freely'));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital + motion.costToTable}}]));
