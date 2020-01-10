@@ -9,8 +9,9 @@ import { Actor } from './actor.model';
 class Game extends React.Component {
   props: any;
 
-  componentDidMount = () => {
-    this.props.dispatch(loadActors(actors));
+  constructor(props: any) {
+    super(props);
+    props.dispatch(loadActors(actors));
     window.requestAnimationFrame(() => {
       this.returnToTablePhase();
     });
@@ -21,9 +22,12 @@ class Game extends React.Component {
   }
 
   returnToTablePhase = () => {
-    console.log(this.props);
-    this.props.dispatch(updateActors((this.props.actors||[]).map((x: Actor) => ({id: x.id, changes: {capital: x.capital + 100}}))));
+    this.grantAllowance();
     this.props.dispatch(refreshAvailableMotions());
+  }
+
+  grantAllowance = () => {
+    this.props.dispatch(updateActors((this.props.actors||[]).map((x: Actor) => ({id: x.id, changes: {capital: x.capital + 100}}))));
   }
 
   onTick = () => {
@@ -45,7 +49,7 @@ class Game extends React.Component {
   table = (motionId: number, actorId = 0) => {
     const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
-    const actor = this.props.actors.find((x: any) => x.id === actorId);
+    const actor = this.props.actors.find((x: Actor) => x.id === actorId);
     console.log('tabling', motion);
     if (!tabled && actor.capital >= motion.costToTable) {
       this.props.dispatch(tableMotion(motionId, 0));
@@ -56,6 +60,7 @@ class Game extends React.Component {
     }
   };
   vote = (motionId: number, actorId = 0) => {
+    const actor = this.props.actors.find((x: any) => x.id === actorId);
     console.log('voting', motionId);
   };
 

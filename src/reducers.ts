@@ -1,8 +1,26 @@
+import { Actor } from "./actor.model";
 
-const initialState = {
+interface State {
+  screen: string;
+  actors: Actor[];
+  availableMotions: Motion[];
+  motionsTabled: {id: number; tabledBy: number}[];
+  motionVotes: {id: number; voters: {id: number, type: string}[]}[];
+  phases: {name: string, countdown: number}[];
+  currentPhase: number;
+  currentPhaseCountdown: number;
+}
+
+export interface Motion {
+  id: number;
+  name: string;
+  effects: { stat: string, amount: number }[];
+}
+
+const initialState: State = {
   screen: 'title',
   actors: [],
-  availableMotions: [{ id: 0, name: 'Motion 1', effects: [{ stat: 'faith', amount: 0 }] }],
+  availableMotions: [],
   motionsTabled: [{ id: 1, tabledBy: 1 }],
   motionVotes: [{ id: 1, voters: [{ id: 3, type: 'bought' }] }], // type can be 'motivated', 'bought', 'respect'
   phases: [{ name: 'table', countdown: 15 }, { name: 'vote', countdown: 60 }],
