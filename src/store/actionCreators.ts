@@ -1,4 +1,4 @@
-import { Actor } from "./actor.model";
+import { Actor } from "../models/actor.model";
 import { Motion } from "./reducers";
 
 export const changeScreen = (screen: string) => ({

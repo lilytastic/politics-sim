@@ -5,14 +5,14 @@ import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import * as serviceWorker from './serviceWorker';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { rootReducer } from './reducers';
+import { rootReducer } from './store/reducers';
 import {
   BrowserRouter as Router,
   Switch,
   Route
 } from 'react-router-dom';
-import Title from './Title';
-import Game from './Game';
+import Title from './containers/Title';
+import Game from './containers/Game';
 
 const store = createStore(rootReducer)
 

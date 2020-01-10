@@ -1,11 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux'
 import { interval, timer } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote, passMotion, changeVotes } from './actionCreators';
-import { Actor } from './actor.model';
-import { Motion } from './reducers';
-import { MotionInfo } from './MotionInfo';
-import { Stat } from './Stat';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote, passMotion, changeVotes } from '../store/actionCreators';
+import { Actor } from '../models/actor.model';
+import { Motion } from '../store/reducers';
+import { MotionInfo } from '../components/MotionInfo';
+import { Stat } from '../components/Stat';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -155,7 +155,9 @@ class Game extends React.Component {
         <h2>Profile</h2>
         <div>
           <ul>
-            {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => <li key={x}><i className={'fas fa-fw mr-1 fa-' + stats[x]?.icon}></i> {this.props.currentSettlement?.derived?.profile[x]}</li>)}
+            {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => (
+              <li key={x}><Stat stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></Stat></li>
+            ))}
           </ul>
         </div>
 
@@ -166,14 +168,14 @@ class Game extends React.Component {
       </div>
       <div className="row">
         <div className="col">
-          {this.props.actors.map((x: any, i: number) => (
+          {this.props.actors.map((x: Actor, i: number) => (
             <div className="mb-3" key={i}>
               <div className="d-flex align-items-center">
                 <div className="w-25">{i+1}. {x.name}</div>
                 <div><Stat stat='capital' value={x.capital}></Stat></div>
               </div>
-              {x.positions.map((position: any, ii: number) => (
-                <Stat stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></Stat>
+              {x.positions.map(position => (
+                <Stat key={position.stat} stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></Stat>
               ))}
             </div>
           ))}
@@ -356,31 +358,3 @@ let actors: Actor[] = [
     ]
   }
 ].map(x => ({...x, capital: 0}));
-
-export const stats: {[id: string]: any} = {
-  faith: {
-    label: 'Purpose',
-    icon: 'praying-hands',
-    color: 'silver'
-  },
-  joy: {
-    label: 'Pleasure',
-    icon: 'glass-cheers',
-    color: 'darkorange'
-  },
-  education: {
-    label: 'Education',
-    icon: 'book',
-    color: 'cadetblue'
-  },
-  vigilance: {
-    label: 'Vigilance',
-    icon: 'shield-alt',
-    color: 'blue'
-  },
-  capital: {
-    label: 'Capital',
-    icon: 'handshake',
-    color: 'crimson'
-  }
-}

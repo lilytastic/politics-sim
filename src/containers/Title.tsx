@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux'
-import { loadSave } from './actionCreators';
+import { loadSave } from '../store/actionCreators';
 import { useHistory } from 'react-router-dom';
 
 const Title = ({ dispatch, screen }: any) => {
