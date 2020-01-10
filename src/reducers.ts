@@ -55,15 +55,30 @@ export function rootReducer(state = initialState, action: any): State {
     case 'PASS_MOTION':
       return {...state, settlementData: state.settlementData.map((x: any) => ({...x, edicts: [...x.edicts, action.motion]}))}
     case 'CHANGE_VOTE':
+      const change = action.change;
       return {
         ...state,
         motionVotes: state.motionVotes.map(motion => {
-          if (motion.id === action.motionId) {
-            return {...motion, voters: motion.voters.map(vote => vote.id === action.actorId ? {...vote, vote: action.vote, reason: action.reason} : vote)};
+          if (motion.id === change.motionId) {
+            return {...motion, voters: motion.voters.map(_vote => _vote.id === change.actorId ? {..._vote, vote: change.vote, reason: change.reason} : _vote)};
           } else {
             return motion;
           }
         })
+      };
+    case 'CHANGE_VOTES':
+      const changes = action.changes;
+      const motionVotes = state.motionVotes.map(motion => {
+        const _changes = changes.filter((x: any) => x.motionId === motion.id);
+        const voters = motion.voters.map(_vote => {
+          const change = _changes.find((x: any) => x.actorId === _vote.id);
+          return change ? {..._vote, vote: change.vote, reason: change.reason} : _vote
+        })
+        return {...motion, voters: voters};
+      });
+      return {
+        ...state,
+        motionVotes: motionVotes
       };
     case 'TABLE_MOTION':
       return { ...state, motionsTabled: [...state.motionsTabled, { id: action.motion, tabledBy: action.tabledBy }] };
