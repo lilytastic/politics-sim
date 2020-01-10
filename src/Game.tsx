@@ -11,7 +11,9 @@ class Game extends React.Component {
 
   componentDidMount = () => {
     this.props.dispatch(loadActors(actors));
-    this.returnToTablePhase();
+    window.requestAnimationFrame(() => {
+      this.returnToTablePhase();
+    });
 
     interval(1000).subscribe(x => {
       this.onTick();
@@ -19,6 +21,7 @@ class Game extends React.Component {
   }
 
   returnToTablePhase = () => {
+    console.log(this.props);
     this.props.dispatch(updateActors((this.props.actors||[]).map((x: Actor) => ({id: x.id, changes: {capital: x.capital + 100}}))));
     this.props.dispatch(refreshAvailableMotions());
   }
@@ -39,16 +42,20 @@ class Game extends React.Component {
     }
   }
 
-  table = (motionId: number) => {
-    console.log('tabling', motionId);
+  table = (motionId: number, actorId = 0) => {
+    const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
-    if (!tabled) {
+    const actor = this.props.actors.find((x: any) => x.id === actorId);
+    console.log('tabling', motion);
+    if (!tabled && actor.capital >= motion.costToTable) {
       this.props.dispatch(tableMotion(motionId, 0));
-    } else if (tabled.tabledBy === 0) {
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital - motion.costToTable}}]));
+    } else if (!!tabled && tabled.tabledBy === 0) {
       this.props.dispatch(rescindMotion(motionId));
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital + motion.costToTable}}]));
     }
   };
-  vote = (motionId: number) => {
+  vote = (motionId: number, actorId = 0) => {
     console.log('voting', motionId);
   };
 
@@ -116,6 +123,7 @@ const mapStateToProps = (state: any) => {
     phase: state.phases[state.currentPhase || 0],
     phases: state.phases,
     actors: state.actors,
+    player: state.actors.find((x: any) => x.id === 0),
     motionsTabled: state.motionsTabled,
     motionVotes: state.motionVotes,
     currentPhaseCountdown: state.currentPhaseCountdown,
