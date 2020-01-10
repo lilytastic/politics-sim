@@ -3,12 +3,18 @@ import { Actor } from "./actor.model";
 interface State {
   screen: string;
   actors: Actor[];
+  settlementData: SettlementData[];
   availableMotions: Motion[];
   motionsTabled: {id: number; tabledBy: number}[];
   motionVotes: {id: number; voters: {id: number, vote: string, reason: string}[]}[];
   phases: {name: string, countdown: number}[];
   currentPhase: number;
   currentPhaseCountdown: number;
+}
+
+export interface SettlementData {
+  id: string;
+  edicts: Motion[];
 }
 
 export interface Motion {
@@ -22,9 +28,10 @@ const initialState: State = {
   screen: 'title',
   actors: [],
   availableMotions: [],
+  settlementData: [{id: 'test', edicts: []}],
   motionsTabled: [],
   motionVotes: [], // type can be 'motivated', 'bought', 'respect'
-  phases: [{ name: 'table', countdown: 15 }, { name: 'vote', countdown: 60 }],
+  phases: [{ name: 'table', countdown: 15 }, { name: 'vote', countdown: 30 }],
   currentPhase: 0,
   currentPhaseCountdown: 0
 };

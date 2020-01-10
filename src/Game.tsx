@@ -65,17 +65,22 @@ class Game extends React.Component {
     }
   }
 
+  getActorApproval = (actor: Actor, motion: Motion) => {
+    let approval = 0;
+    actor.positions.forEach(position => {
+      const effect = motion.effects.find(x => x.stat === position.stat);
+      approval += (effect?.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * (position.passion / 100)
+    });
+    return approval;
+  }
+
   actorsVote = () => {
     this.props?.actors.filter((x: Actor) => x.id !== this.props.player.id).forEach((actor: Actor) => {
       this.props?.availableMotions
         .filter((motion: Motion) => !!this.props.motionsTabled.find((x: any) => x.id === motion.id))
         .forEach((motion: Motion) => {
-          let approval = 0;
-          actor.positions.forEach(position => {
-            const effect = motion.effects.find(x => x.stat === position.stat);
-            approval += (effect?.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * position.passion
-          });
-          this.props.dispatch(changeVote(actor.id, motion.id, approval > 10 ? 'yea' : approval < 0 ? 'nay' : 'abstain', 'freely'));
+          let approval = this.getActorApproval(actor, motion);
+          this.props.dispatch(changeVote(actor.id, motion.id, approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain', 'freely'));
         });
     });
   }
@@ -116,7 +121,17 @@ class Game extends React.Component {
   render = () => (
     <div className="p-5">
       <div className="mb-4">
-        Current Phase: {this.props.phase?.name} ({this.props.phase?.countdown - this.props.currentPhaseCountdown}s)
+        <h2>Profile</h2>
+        <div>
+          <ul>
+            {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => <li key={x}><i className={'fas fa-fw mr-1 fa-' + stats[x]?.icon}></i> {this.props.currentSettlement?.derived?.profile[x]}</li>)}
+          </ul>
+        </div>
+
+        <h2 className="mt-5">Politics</h2>
+        <div>
+          Current Phase: {this.props.phase?.name} ({this.props.phase?.countdown - this.props.currentPhaseCountdown}s)
+        </div>
       </div>
       <div className="row">
         <div className="col">
@@ -188,9 +203,19 @@ class Game extends React.Component {
 }
 
 const mapStateToProps = (state: any) => {
+  const settlement = state.settlementData[0];
+  const profile: {[id: string]: number} = {faith: 0, joy: 0, vigilance: 0, education: 0};
+  settlement.edicts.forEach((motion: Motion) => {
+    motion.effects.forEach(effect => {
+      profile[effect.stat] = profile[effect.stat] || 0;
+      profile[effect.stat] += effect.amount;
+    });
+  });
+
   return {
     phase: state.phases[state.currentPhase || 0],
     phases: state.phases,
+    currentSettlement: {...settlement, derived: {profile: profile}},
     actors: state.actors,
     player: state.actors.find((x: any) => x.id === 0),
     motionsTabled: state.motionsTabled,
