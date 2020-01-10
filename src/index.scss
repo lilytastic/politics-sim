@@ -11,3 +11,37 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+ul {
+  padding: 0;
+  list-style-type: none;
+}
+
+.tabled {
+  box-shadow: 0 0 0 3px lime !important;
+}
+
+.App-main {
+  background-color: #eeeeee;
+  color: #555555;
+}
+
+.full-screen {
+  min-height: 100vh;
+}
+
+.center-vert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

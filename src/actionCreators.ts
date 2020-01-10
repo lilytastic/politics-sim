@@ -1,3 +1,4 @@
+import { Actor } from "./actor.model";
 
 export const changeScreen = (screen: string) => ({
   type: 'CHANGE_SCREEN',
@@ -27,3 +28,6 @@ export const rescindMotion = (motion: number) => ({
 });
 
 export const loadSave = (data: any) => ({type: 'LOAD_SAVE', data})
+
+export const loadActors = (actors: Actor[]) => ({type: 'LOAD_ACTORS', actors})
+export const updateActors = (changes: {id: number, changes: Partial<Actor>}[]) => ({type: 'UPDATE_ACTORS', changes})
