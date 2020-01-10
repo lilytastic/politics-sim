@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux'
 import { interval } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors } from './actionCreators';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote } from './actionCreators';
 import { Actor } from './actor.model';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
@@ -30,6 +30,10 @@ class Game extends React.Component {
     this.props.dispatch(updateActors((this.props.actors||[]).map((x: Actor) => ({id: x.id, changes: {capital: x.capital + 100}}))));
   }
 
+  getVote(motionId: number, actorId: number) {
+    return this.props.motionVotes.find((x: any) => x.id === motionId)?.voters?.find((x: any) => x.id === actorId);
+  }
+
   onTick = () => {
     if (this.props.currentPhaseCountdown >= this.props.phase?.countdown) {
       if (this.props.phase?.name === 'table' && !this.props.motionsTabled.length) {
@@ -53,14 +57,18 @@ class Game extends React.Component {
     console.log('tabling', motion);
     if (!tabled && actor.capital >= motion.costToTable) {
       this.props.dispatch(tableMotion(motionId, 0));
+      this.props.dispatch(changeVote(actor.id, motionId, 'yea', 'freely'));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital - motion.costToTable}}]));
     } else if (!!tabled && tabled.tabledBy === 0) {
       this.props.dispatch(rescindMotion(motionId));
+      this.props.dispatch(changeVote(actor.id, motionId, 'abstain', 'freely'));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital + motion.costToTable}}]));
     }
   };
   vote = (motionId: number, actorId = 0) => {
     const actor = this.props.actors.find((x: any) => x.id === actorId);
+    const vote = this.getVote(motionId, actorId);
+    this.props.dispatch(changeVote(actor.id, motionId, vote?.vote === 'yea' ? 'abstain' : 'yea', 'freely'));
     console.log('voting', motionId);
   };
 
@@ -98,10 +106,18 @@ class Game extends React.Component {
             <button
                 onClick={() => this.phaseFunc[this.props.phase.name] ? this.phaseFunc[this.props.phase.name](motion.id) : null} key={i}
                 disabled={this.props.phase?.name !== 'table' && !this.props.motionsTabled.find((x: any) => x.id === motion.id)}
-                className={"text-left btn btn-light d-block mb-2 w-100 " + (this.props.phase?.name === 'table' && this.props.motionsTabled.findIndex((x: any) => x.id === motion.id) !== -1 ? 'tabled' : '')}>
-              <div>
-                {motion.name}
-                {this.isTabled(motion.id) ? (' - Tabled by ' + this.getActor(this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy)?.name) : ''}
+                className={"text-left btn btn-light d-block mb-2 w-100 " + (
+                  this.props.phase?.name === 'table' && this.props.motionsTabled.findIndex((x: any) => x.id === motion.id) !== -1 ? 'tabled' : ''
+                ) + (
+                  this.props.phase?.name === 'vote' && this.getVote(motion.id, this.props.player.id)?.vote === 'yea' ? 'tabled' : ''
+                )}>
+              <div className="d-flex justify-content-between">
+                <div>
+                  {motion.name}
+                  {this.isTabled(motion.id) ? (' - Tabled by ' + this.getActor(this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy)?.name) : ''}
+                </div>
+                <div>
+                </div>
               </div>
               <div className="d-flex justify-content-between">
                 <div>
@@ -113,7 +129,22 @@ class Game extends React.Component {
                     </span>
                   ))}
                 </div>
-                <div><i className="fas fa-fw fa-handshake mr-1" style={{color: 'crimson'}}></i>{motion.costToTable}</div>
+                <div>
+                  {this.props.phase?.name !== 'table' ? 
+                    <span>
+                      Yea: {this.props.actors
+                        ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0}
+                      &nbsp;
+                      Nay: {this.props.actors
+                        ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0}
+                    </span>
+                  :
+                    <span>
+                      <i className="fas fa-fw fa-handshake mr-1" style={{color: 'crimson'}}></i>
+                      {motion.costToTable}
+                    </span>
+                  }
+                </div>
               </div>
             </button>
           ))}

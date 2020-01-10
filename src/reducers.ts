@@ -5,7 +5,7 @@ interface State {
   actors: Actor[];
   availableMotions: Motion[];
   motionsTabled: {id: number; tabledBy: number}[];
-  motionVotes: {id: number; voters: {id: number, type: string}[]}[];
+  motionVotes: {id: number; voters: {id: number, vote: string, reason: string}[]}[];
   phases: {name: string, countdown: number}[];
   currentPhase: number;
   currentPhaseCountdown: number;
@@ -14,6 +14,7 @@ interface State {
 export interface Motion {
   id: number;
   name: string;
+  costToTable: number;
   effects: { stat: string, amount: number }[];
 }
 
@@ -21,14 +22,14 @@ const initialState: State = {
   screen: 'title',
   actors: [],
   availableMotions: [],
-  motionsTabled: [{ id: 1, tabledBy: 1 }],
-  motionVotes: [{ id: 1, voters: [{ id: 3, type: 'bought' }] }], // type can be 'motivated', 'bought', 'respect'
+  motionsTabled: [],
+  motionVotes: [], // type can be 'motivated', 'bought', 'respect'
   phases: [{ name: 'table', countdown: 15 }, { name: 'vote', countdown: 60 }],
   currentPhase: 0,
   currentPhaseCountdown: 0
 };
 
-export function rootReducer(state = initialState, action: any) {
+export function rootReducer(state = initialState, action: any): State {
   if (action.type !== 'CHANGE_CURRENT_PHASE_COUNTDOWN') {
     console.log(action);
   }
@@ -44,6 +45,17 @@ export function rootReducer(state = initialState, action: any) {
           return actor;
         }
       }) };
+    case 'CHANGE_VOTE':
+      return {
+        ...state,
+        motionVotes: state.motionVotes.map(motion => {
+          if (motion.id === action.motionId) {
+            return {...motion, voters: motion.voters.map(vote => vote.id === action.actorId ? {...vote, vote: action.vote, reason: action.reason} : vote)};
+          } else {
+            return motion;
+          }
+        })
+      };
     case 'TABLE_MOTION':
       return { ...state, motionsTabled: [...state.motionsTabled, { id: action.motion, tabledBy: action.tabledBy }] };
     case 'RESCIND_MOTION':
@@ -73,7 +85,14 @@ export function rootReducer(state = initialState, action: any) {
           costToTable: effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) * 20
         });
       }
-      return { ...state, motionsTabled: [], motionVotes: [], availableMotions: motions };
+      return {
+        ...state,
+        motionsTabled: [],
+        motionVotes: motions.map(motion => (
+          {id: motion.id, voters: state.actors.map(actor => ({id: actor.id, reason: 'freely', vote: 'abstain'}))}
+        )),
+        availableMotions: motions
+      };
     default:
       return state;
   }

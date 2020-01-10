@@ -27,6 +27,14 @@ export const rescindMotion = (motion: number) => ({
   motion
 });
 
+export const changeVote = (actorId: number, motionId: number, vote: string, reason: string) => ({
+  type: 'CHANGE_VOTE',
+  actorId,
+  motionId,
+  vote,
+  reason
+})
+
 export const loadSave = (data: any) => ({type: 'LOAD_SAVE', data})
 
 export const loadActors = (actors: Actor[]) => ({type: 'LOAD_ACTORS', actors})
