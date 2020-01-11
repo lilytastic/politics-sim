@@ -102,23 +102,25 @@ class Game extends React.Component {
 
   actorsVote = () => {
     let changes: any[] = [];
-    this.props?.actors.filter((x: Actor) => x.id !== this.props.player?.id).forEach((actor: Actor) => {
-      this.props?.availableMotions
-        .filter((motion: Motion) => !!this.props.motionsTabled.find((x: any) => x.id === motion.id))
-        .forEach((motion: Motion) => {
-          let approval = this.getActorApproval(actor, motion);
-          changes.push({
-            actorId: actor.id,
-            motionId: motion.id,
-            vote: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain',
-            reason: 'freely'
+    this.props?.actors
+      .filter((x: Actor) => x.id !== (this.props.player?.id || '0'))
+      .forEach((actor: Actor) => {
+        this.props?.availableMotions
+          .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
+          .forEach((motion: Motion) => {
+            let approval = this.getActorApproval(actor, motion);
+            changes.push({
+              actorId: actor.id,
+              motionId: motion.id,
+              vote: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain',
+              reason: 'freely'
+            });
           });
-        });
-    });
+      });
     this.props.dispatch(changeVotes(changes));
   }
 
-  table = (motionId: string, actorId = '0') => {
+  table = (motionId: string, actorId: string) => {
     const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
     const actor = this.props.actors.find((x: Actor) => x.id === actorId);
@@ -136,7 +138,7 @@ class Game extends React.Component {
     }
   };
 
-  vote = (motionId: string, actorId = '0', vote: string | null = null) => {
+  vote = (motionId: string, actorId: string, vote: string | null = null) => {
     const actor = this.props.actors.find((x: any) => x.id === actorId);
     const currentVote = this.getVote(motionId, actorId);
     if (!actor) {
@@ -155,7 +157,7 @@ class Game extends React.Component {
     return arr.find((x: any) => x.id === id);
   }
 
-  phaseFunc: {[id: string]: (motionid: string) => void} = {table: this.table, vote: this.vote};
+  phaseFunc: {[id: string]: (motionid: string, actorId: string) => void} = {table: this.table, vote: this.vote};
 
   render = () => (
     <div className="p-5 content">
@@ -204,12 +206,12 @@ class Game extends React.Component {
                 <div className="btn-group w-100">
                   <button style={{borderTopLeftRadius: 0}}
                       className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || '0')?.vote !== 'yea' ? 'outline-' : ''}success`}
-                      onClick={() => this.vote(motion.id, this.props.player?.id, 'yea')}>
+                      onClick={() => this.vote(motion.id, this.props.player?.id || '0', 'yea')}>
                     Yea
                   </button>
                   <button style={{borderTopRightRadius: 0}}
                       className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || '0')?.vote !== 'nay' ? 'outline-' : ''}danger`}
-                      onClick={() => this.vote(motion.id, this.props.player?.id, 'nay')}>
+                      onClick={() => this.vote(motion.id, this.props.player?.id || '0', 'nay')}>
                     Nay
                   </button>
                 </div>
@@ -218,7 +220,7 @@ class Game extends React.Component {
                   <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
                       disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player?.id || '0')}
                       className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
-                      onClick={() => this.table(motion.id, this.props.player?.id)}>
+                      onClick={() => this.table(motion.id, this.props.player?.id || '0')}>
                     {!!motion.onTable ? 'Rescind' : 'Table'}
                     &nbsp;&nbsp;&nbsp;
                     <Stat stat='capital' value={motion.costToTable}></Stat>
