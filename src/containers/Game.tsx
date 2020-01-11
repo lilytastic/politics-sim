@@ -1,16 +1,17 @@
 import React from 'react';
-import { connect } from 'react-redux'
+import { connect, ConnectedProps } from 'react-redux'
 import { interval, timer } from 'rxjs';
 import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote, passMotion, changeVotes } from '../store/actionCreators';
-import { Actor } from '../models/actor.model';
-import { Motion } from '../store/reducers';
+import { Actor, actors } from '../models/actor.model';
+import { Motion, State } from '../store/reducers';
 import { MotionInfo } from '../components/MotionInfo';
 import { Stat } from '../components/Stat';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
 class Game extends React.Component {
-  props: any;
+  // @ts-ignore;
+  props: Props;
 
   constructor(props: any) {
     super(props);
@@ -29,7 +30,7 @@ class Game extends React.Component {
     this.props.dispatch(refreshAvailableMotions());
     timer(5000).subscribe(() => {
       console.log('checking table preference');
-      this.props?.actors.filter((x: Actor) => x.id !== this.props.player.id).forEach((actor: Actor) => {
+      this.props?.actors.filter((x: Actor) => x.id !== this.props.player?.id).forEach((actor: Actor) => {
         this.props.availableMotions.forEach((motion: Motion) => {
           const approval = this.getActorApproval(actor, motion);
           if (approval > 2.5) {
@@ -101,7 +102,7 @@ class Game extends React.Component {
 
   actorsVote = () => {
     let changes: any[] = [];
-    this.props?.actors.filter((x: Actor) => x.id !== this.props.player.id).forEach((actor: Actor) => {
+    this.props?.actors.filter((x: Actor) => x.id !== this.props.player?.id).forEach((actor: Actor) => {
       this.props?.availableMotions
         .filter((motion: Motion) => !!this.props.motionsTabled.find((x: any) => x.id === motion.id))
         .forEach((motion: Motion) => {
@@ -121,6 +122,9 @@ class Game extends React.Component {
     const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
     const actor = this.props.actors.find((x: Actor) => x.id === actorId);
+    if (!actor || !motion) {
+      return;
+    }
     if (!tabled && actor.capital >= motion.costToTable) {
       this.props.dispatch(tableMotion(motionId, actor.id));
       this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}));
@@ -132,15 +136,23 @@ class Game extends React.Component {
     }
   };
 
-  vote = (motionId: number, actorId = 0) => {
+  vote = (motionId: number, actorId = 0, vote: string | null = null) => {
     const actor = this.props.actors.find((x: any) => x.id === actorId);
-    const vote = this.getVote(motionId, actorId);
-    this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: vote?.vote === 'yea' ? 'abstain' : 'yea', reason: 'freely'}));
+    const currentVote = this.getVote(motionId, actorId);
+    if (!actor) {
+      return;
+    }
+    this.props.dispatch(changeVote({
+      actorId: actor.id,
+      motionId: motionId,
+      vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
+      reason: 'freely'
+    }));
     console.log('voting', motionId);
   };
 
   getActor = (id: number) => {
-    return actors.find(x => x.id === id);
+    return this.props.actors.find((x: Actor) => x.id === id);
   }
 
   isTabled = (id: number) => {
@@ -150,23 +162,73 @@ class Game extends React.Component {
   phaseFunc: {[id: string]: (motionid: number) => void} = {table: this.table, vote: this.vote};
 
   render = () => (
-    <div className="p-5">
+    <div className="p-5 content">
       <div className="mb-4">
         <h2>Profile</h2>
         <div>
-          <ul>
+          <ul className="d-flex">
             {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => (
-              <li key={x}><Stat stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></Stat></li>
+              <li key={x} style={{minWidth: '60px'}}><Stat stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></Stat></li>
             ))}
           </ul>
         </div>
 
         <h2 className="mt-5">Politics</h2>
         <div>
-          Current Phase: {this.props.phase?.name} ({this.props.phase?.countdown - this.props.currentPhaseCountdown}s)
+          Current Phase: {this.props.phase?.name} (<span style={{color: this.props.phase?.countdown - this.props.currentPhaseCountdown < 10 ? 'crimson' : 'inherit'}}>
+            {this.props.phase?.countdown - this.props.currentPhaseCountdown}s
+          </span>)
         </div>
       </div>
       <div className="row">
+        <div className="col">
+          {this.props.availableMotions.filter((motion: any) => this.props.phase?.name === 'table' || this.isTabled(motion.id)).map((motion: any, i: number) => (
+            <div key={motion.id}
+                className={"text-left mb-3 w-100 bg-light rounded"}>
+              <div className="rounded-top border border-secondary border-bottom-0 p-2 px-3">
+                <MotionInfo
+                  motion={motion}
+                  mode={this.props.phase?.name}
+                  tabledBy={this.getActor(this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy || -1)}>
+                  {this.props.phase?.name !== 'table' ?
+                    <span>
+                      Yea: {this.props.actors
+                        ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0}
+                      &nbsp;
+                      Nay: {this.props.actors
+                        ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0}
+                    </span>
+                  :
+                    <Stat stat='capital' value={motion.costToTable}></Stat>
+                  }
+                </MotionInfo>
+              </div>
+              {this.props.phase?.name !== 'table' ? (
+                <div className="btn-group w-100">
+                  <button style={{borderTopLeftRadius: 0}}
+                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || 0)?.vote !== 'yea' ? 'outline-' : ''}success`}
+                      onClick={() => this.vote(motion.id, this.props.player?.id, 'yea')}>
+                    Yea
+                  </button>
+                  <button style={{borderTopRightRadius: 0}}
+                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || 0)?.vote !== 'nay' ? 'outline-' : ''}danger`}
+                      onClick={() => this.vote(motion.id, this.props.player?.id, 'nay')}>
+                    Nay
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
+                      disabled={!!this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy && this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy !== (this.props.player?.id || 0)}
+                      className={"btn btn-block " + (!!this.props.motionsTabled.find((x: any) => x.id === motion.id) ? "btn-outline-danger" : "btn-outline-primary")}
+                      onClick={() => this.table(motion.id, this.props.player?.id)}>
+                    {!!this.props.motionsTabled.find((x: any) => x.id === motion.id) ? 'Rescind' : 'Table'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
         <div className="col">
           {this.props.actors.map((x: Actor, i: number) => (
             <div className="mb-3" key={i}>
@@ -180,43 +242,14 @@ class Game extends React.Component {
             </div>
           ))}
         </div>
-        <div className="col">
-          {this.props.availableMotions.filter((motion: any) => this.props.phase?.name === 'table' || this.isTabled(motion.id)).map((motion: any, i: number) => (
-            <button
-                onClick={() => this.phaseFunc[this.props.phase.name]?.(motion.id)} key={i}
-                disabled={this.props.phase?.name !== 'table' && !this.props.motionsTabled.find((x: any) => x.id === motion.id)}
-                className={"text-left btn btn-light d-block mb-2 w-100" + (
-                  this.props.phase?.name === 'table' && this.props.motionsTabled.findIndex((x: any) => x.id === motion.id) !== -1 ? ' tabled' : ''
-                ) + (
-                  this.props.phase?.name === 'vote' && this.getVote(motion.id, this.props.player.id)?.vote === 'yea' ? ' tabled' : ''
-                )}>
-              <MotionInfo
-                motion={motion}
-                mode={this.props.phase?.name}
-                tabledBy={this.getActor(this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy)}>
-                {this.props.phase?.name !== 'table' ?
-                  <span>
-                    Yea: {this.props.actors
-                      ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0}
-                    &nbsp;
-                    Nay: {this.props.actors
-                      ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0}
-                  </span>
-                :
-                  <Stat stat='capital' value={motion.costToTable}></Stat>
-                }
-              </MotionInfo>
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );
 }
 
-const mapStateToProps = (state: any) => {
+const mapStateToProps = (state: State) => {
   const settlement = state.settlementData[0];
-  const profile: {[id: string]: number} = {faith: 0, joy: 0, vigilance: 0, education: 0};
+  const profile: {[id: string]: number} = {faith: 0, joy: 0, education: 0, vigilance: 0, disobedience: 0, poverty: 0, ignorance: 0, threat: 0};
   settlement.edicts.forEach((motion: Motion) => {
     motion.effects.forEach(effect => {
       profile[effect.stat] = profile[effect.stat] || 0;
@@ -239,122 +272,13 @@ const mapStateToProps = (state: any) => {
   }
 };
 
-export default connect(
+const connector = connect(
   mapStateToProps
-)(Game);
+);
 
+type PropsFromRedux = ConnectedProps<typeof connector>
+type Props = PropsFromRedux & {
+  backgroundColor: string
+}
 
-let actors: Actor[] = [
-  {
-    id: 0,
-    name: 'Ananth',
-    positions: [
-      {
-        stat: 'faith',
-        attitude: 'raise',
-        passion: 50
-      },
-      {
-        stat: 'vigilance',
-        attitude: 'lower',
-        passion: 50
-      }
-    ]
-  },
-  {
-    id: 1,
-    name: 'Guy 1',
-    positions: [
-      {
-        stat: 'education',
-        attitude: 'raise',
-        passion: 50
-      },
-      {
-        stat: 'faith',
-        attitude: 'lower',
-        passion: 50
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Guy 2',
-    positions: [
-      {
-        stat: 'vigilance',
-        attitude: 'raise',
-        passion: 50
-      },
-      {
-        stat: 'joy',
-        attitude: 'lower',
-        passion: 50
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Guy 3',
-    positions: [
-      {
-        stat: 'education',
-        attitude: 'lower',
-        passion: 50
-      },
-      {
-        stat: 'vigilance',
-        attitude: 'raise',
-        passion: 50
-      }
-    ]
-  },
-  {
-    id: 4,
-    name: 'Guy 4',
-    positions: [
-      {
-        stat: 'vigilance',
-        attitude: 'lower',
-        passion: 50
-      },
-      {
-        stat: 'faith',
-        attitude: 'raise',
-        passion: 50
-      }
-    ]
-  },
-  {
-    id: 5,
-    name: 'Guy 5',
-    positions: [
-      {
-        stat: 'faith',
-        attitude: 'lower',
-        passion: 50
-      },
-      {
-        stat: 'joy',
-        attitude: 'raise',
-        passion: 50
-      }
-    ]
-  },
-  {
-    id: 6,
-    name: 'Guy 6',
-    positions: [
-      {
-        stat: 'joy',
-        attitude: 'lower',
-        passion: 50
-      },
-      {
-        stat: 'education',
-        attitude: 'raise',
-        passion: 50
-      }
-    ]
-  }
-].map(x => ({...x, capital: 0}));
+export default connector(Game);

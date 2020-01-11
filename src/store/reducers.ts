@@ -1,6 +1,6 @@
 import { Actor } from "../models/actor.model";
 
-interface State {
+export interface State {
   screen: string;
   actors: Actor[];
   settlementData: SettlementData[];
@@ -31,7 +31,7 @@ const initialState: State = {
   settlementData: [{id: 'test', edicts: []}],
   motionsTabled: [],
   motionVotes: [], // type can be 'motivated', 'bought', 'respect'
-  phases: [{ name: 'table', countdown: 15 }, { name: 'vote', countdown: 30 }],
+  phases: [{ name: 'table', countdown: 20 }, { name: 'vote', countdown: 40 }],
   currentPhase: 0,
   currentPhaseCountdown: 0
 };

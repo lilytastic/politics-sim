@@ -4,7 +4,7 @@ import { Stat } from './Stat';
 export const MotionInfo = ({ motion, tabledBy, children }: any) => {return (
   <div>
     <div className="d-flex justify-content-between">
-      <div>
+      <div className="large mb-1 font-bold">
         {motion.name}
       </div>
       <div>
