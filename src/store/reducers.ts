@@ -1,10 +1,34 @@
 import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
 import { PolicyBaseData, PolicyState } from "../models/policy.model";
+import * as Policies from "../content/policies.json";
 
 declare global {
   interface Array<T> {
+    shuffle(): T[];
     toEntities(): {[id: string]: T};
+  }
+}
+
+if (!Array.prototype.shuffle) {
+  Array.prototype.shuffle = function<T>() {
+    const woo = [...this];
+    var currentIndex = this.length, temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      // And swap it with the current element.
+      temporaryValue = woo[currentIndex];
+      woo[currentIndex] = woo[randomIndex];
+      woo[randomIndex] = temporaryValue;
+    }
+
+    return woo;
   }
 }
 
@@ -46,13 +70,14 @@ export interface SettlementBaseData {
 }
 
 export interface SettlementState {
-  policies: PolicyState[];
+  policies: {[id: string]: string};
 }
 
 const initialState: State = {
   screen: 'title',
   actors: [],
-  policies: [],
+  // @ts-ignore;
+  policies: Policies.default,
   settlements: [{id: 'test'}],
   phases: [{ id: 'table', label: 'Table', countdown: 20 }, { id: 'vote', label: 'Vote', countdown: 40 }],
   saveData: {
@@ -62,7 +87,7 @@ const initialState: State = {
     motionVotes: {}, // type can be 'motivated', 'bought', 'respect'
     settlementState: {
       'test': {
-        policies: []
+        policies: {}
       }
     },
     currentPhase: 0,
@@ -95,19 +120,27 @@ export function rootReducer(state = initialState, action: any): State {
         }
       };
     case 'PASS_MOTION':
-      const settlementState = Object.keys(state.saveData.settlementState)
-        .map((key) => {
-          const currentState = state.saveData.settlementState[key];
-          return {...currentState, policies: [...currentState.policies, action.motion]};
-        })
-        .toEntities();
-      return {
-        ...state,
-        saveData: {
-          ...state.saveData,
-          settlementState: settlementState
-        }
-      };
+      switch (action.motion.change.type) {
+        case 'CHANGE_POLICY':
+          // payload: policyId, stanceId
+          const settlementState = Object.keys(state.saveData.settlementState)
+            .map((key) => {
+              const currentState = state.saveData.settlementState[key];
+              const newPolicies = {...currentState.policies};
+              newPolicies[action.motion.change.payload.policyId] = action.motion.change.payload.stanceId;
+              return {...state.saveData.settlementState[key], id: key, policies: newPolicies};
+            });
+          console.log(settlementState, settlementState.toEntities());
+          return {
+            ...state,
+            saveData: {
+              ...state.saveData,
+              settlementState: settlementState.toEntities()
+            }
+          };
+        default:
+          return state;
+      }
     case 'CHANGE_VOTE':
       const change = action.change;
       const _motionVotes = {...state.saveData.motionVotes};
@@ -155,23 +188,60 @@ export function rootReducer(state = initialState, action: any): State {
     case 'CHANGE_CURRENT_PHASE_COUNTDOWN':
       return { ...state, saveData: {...state.saveData, currentPhaseCountdown: action.currentPhaseCountdown }};
     case 'REFRESH_AVAILABLE_MOTIONS':
-      const motions = [];
+      let motions: Motion[] = [];
+      const settlementState: SettlementState = state.saveData.settlementState['test'];
+
+      const possibleMotions: Motion[] = [];
+      state.policies.forEach(policy => {
+        Object.keys(policy.stances).forEach(key => {
+          const stance = policy.stances[key];
+          const existingStance = settlementState?.policies[policy.id];
+          const effects = stance.effects.map(x => {
+            const relevantEffect = existingStance ? policy.stances[existingStance].effects.find(eff => eff.stat === x.stat) : null;
+            return {
+              ...x,
+              amount: existingStance ? x.amount - (relevantEffect ? relevantEffect.amount : 0) : x.amount
+            };
+          });
+          possibleMotions.push({
+            id: `${policy.id}_${key}`,
+            name: `${policy.label} is ${stance.label}`,
+            change: {
+              type: 'CHANGE_POLICY',
+              payload: {policyId: policy.id, stanceId: key}
+            },
+            costToTable: effects.reduce((acc, curr) => {
+              let amount = curr.amount;
+              return acc + Math.abs(amount);
+            }, 0) * 20,
+            effects: effects
+          });
+        });
+      });
+
+      /*
       for (let i = 0; i < 6; i++) {
         const effects: { stat: string, amount: number }[] = [];
         for (let ii = 0; ii < 1 + Math.round(Math.random()); ii++) {
-          const allowedStats = ['faith', 'joy', 'vigilance', 'education'].filter(x => !effects.find(y => y.stat === x));
+          const baseStats = ['faith', 'joy', 'vigilance', 'education'];
+          const menaces = ['poverty', 'threat', 'ignorance', 'disobedience'];
+          const allowedStats = (ii > 0 ? [...baseStats, ...menaces] : baseStats).filter(x => !effects.find(y => y.stat === x));
           effects.push({
             stat: allowedStats[Math.floor(Math.random() * allowedStats.length)],
             amount: Math.round((1 + Math.random() * 9) * (Math.random() * 100 > 50 ? 1 : -1))
           });
         }
-        motions.push({
+        const newMotion = {
           id: i.toString(),
           name: 'Motion ' + (i + 1),
           effects: effects,
           costToTable: effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) * 20
-        });
+        };
+        motions.push(newMotion);
       }
+      */
+      motions = possibleMotions.shuffle().slice(0, 6);
+
       return {
         ...state,
         saveData: {

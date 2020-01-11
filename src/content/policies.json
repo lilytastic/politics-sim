@@ -1,0 +1,56 @@
+[
+	{
+		"id": "dab",
+		"label": "Dabbing",
+		"stances": {
+			"blessed": {
+				"label": "Blessed",
+				"effects": [{"stat": "faith", "amount": 15}]
+			},
+			"permitted": {
+				"label": "Permitted",
+				"effects": [{"stat": "faith", "amount": 5}]
+			},
+			"forbidden": {
+				"label": "Forbidden",
+				"effects": [{"stat": "faith", "amount": -10}]
+			}
+		}
+	},
+	{
+		"id": "yeet",
+		"label": "Yeeting",
+		"stances": {
+			"blessed": {
+				"label": "Blessed",
+				"effects": [{"stat": "education", "amount": 15}]
+			},
+			"permitted": {
+				"label": "Permitted",
+				"effects": [{"stat": "education", "amount": 5}]
+			},
+			"forbidden": {
+				"label": "Forbidden",
+				"effects": [{"stat": "education", "amount": -10}]
+			}
+		}
+	},
+	{
+		"id": "anal",
+		"label": "Hard Anal",
+		"stances": {
+			"blessed": {
+				"label": "Blessed",
+				"effects": [{"stat": "joy", "amount": 15}]
+			},
+			"permitted": {
+				"label": "Permitted",
+				"effects": [{"stat": "joy", "amount": 5}]
+			},
+			"forbidden": {
+				"label": "Forbidden",
+				"effects": [{"stat": "joy", "amount": -10}]
+			}
+		}
+	}
+]

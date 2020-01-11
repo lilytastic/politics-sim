@@ -7,6 +7,8 @@ import { State } from '../store/reducers';
 import { MotionInfo } from '../components/MotionInfo';
 import { Stat } from '../components/Stat';
 import { Motion } from '../models/motion.model';
+import { stats } from '../models/stats.model';
+import { PolicyState, PolicyBaseData } from '../models/policy.model';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -47,7 +49,7 @@ class Game extends React.Component {
   }
 
   getVote(motionId: string, actorId: string) {
-    return this.props.motionVotes[motionId][actorId];
+    return this.props.motionVotes[motionId]?.[actorId];
   }
 
   onTick = () => {
@@ -94,9 +96,13 @@ class Game extends React.Component {
 
   getActorApproval = (actor: ActorWithState, motion: Motion) => {
     let approval = 0;
-    actor.state.positions.forEach(position => {
-      const effect = motion.effects.find(x => x.stat === position.stat);
-      approval += (effect?.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * (position.passion / 100)
+    motion.effects.forEach(effect => {
+      const position = actor.state.positions.find(p => p.stat === effect.stat);
+      if (position) {
+        approval += (effect.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * (position.passion / 100);
+      } else if (stats[effect.stat].isNegative) {
+        approval -= effect.amount * 50 / 100;
+      }
     });
     return approval;
   }
@@ -170,6 +176,15 @@ class Game extends React.Component {
               <li key={x} style={{minWidth: '60px'}}><Stat stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></Stat></li>
             ))}
           </ul>
+          <ul>
+            {Object.keys(this.props.currentSettlement?.state?.policies).map(key => {
+              const policy: PolicyBaseData | undefined = this.props.policies.find(x => x.id === key);
+              const stance = policy?.stances[this.props.currentSettlement?.state?.policies[key]];
+              return (
+                <li key={key}>{policy?.label}: {stance?.label}</li>
+              );
+            })}
+          </ul>
         </div>
 
         <h2 className="mt-5">Politics</h2>
@@ -239,7 +254,9 @@ class Game extends React.Component {
                 <div><Stat stat='capital' value={x.state.capital}></Stat></div>
               </div>
               {x.state.positions.map(position => (
-                <Stat key={position.stat} stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></Stat>
+                <span key={position.stat} style={{opacity: position.passion / 100.0}}>
+                  <Stat stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></Stat>
+                </span>
               ))}
             </div>
           ))}
@@ -271,6 +288,7 @@ const mapStateToProps = (state: State) => {
     motionVotes: state.saveData.motionVotes,
     currentPhaseCountdown: state.saveData.currentPhaseCountdown,
     currentPhase: state.saveData.currentPhase,
+    policies: state.policies,
     screen: state.screen,
     availableMotions: state.saveData.availableMotions
   }
