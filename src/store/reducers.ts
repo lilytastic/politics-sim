@@ -219,28 +219,7 @@ export function rootReducer(state = initialState, action: any): State {
         });
       });
 
-      /*
-      for (let i = 0; i < 6; i++) {
-        const effects: { stat: string, amount: number }[] = [];
-        for (let ii = 0; ii < 1 + Math.round(Math.random()); ii++) {
-          const baseStats = ['faith', 'joy', 'vigilance', 'education'];
-          const menaces = ['poverty', 'threat', 'ignorance', 'disobedience'];
-          const allowedStats = (ii > 0 ? [...baseStats, ...menaces] : baseStats).filter(x => !effects.find(y => y.stat === x));
-          effects.push({
-            stat: allowedStats[Math.floor(Math.random() * allowedStats.length)],
-            amount: Math.round((1 + Math.random() * 9) * (Math.random() * 100 > 50 ? 1 : -1))
-          });
-        }
-        const newMotion = {
-          id: i.toString(),
-          name: 'Motion ' + (i + 1),
-          effects: effects,
-          costToTable: effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) * 20
-        };
-        motions.push(newMotion);
-      }
-      */
-      motions = possibleMotions.shuffle().slice(0, 6);
+      motions = possibleMotions.filter(x => x.effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) > 0).shuffle().slice(0, 6);
 
       return {
         ...state,

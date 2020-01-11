@@ -5,7 +5,7 @@ import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotion
 import { ActorBaseData, ActorState, actors, ActorWithState, returnActorWithState } from '../models/actor.model';
 import { State } from '../store/reducers';
 import { MotionInfo } from '../components/MotionInfo';
-import { Stat } from '../components/Stat';
+import { StatIcon } from '../components/StatIcon';
 import { Motion } from '../models/motion.model';
 import { stats } from '../models/stats.model';
 import { PolicyState, PolicyBaseData } from '../models/policy.model';
@@ -32,15 +32,16 @@ class Game extends React.Component {
     this.grantAllowance();
     this.props.dispatch(refreshAvailableMotions());
     timer(5000).subscribe(() => {
-      console.log('checking table preference');
-      this.props?.actors.filter((x: ActorWithState) => x.id !== this.props.player?.id).forEach((actor: ActorWithState) => {
-        this.props.availableMotions.forEach((motion: Motion) => {
-          const approval = this.getActorApproval(actor, motion);
-          if (approval > 2.5) {
-            this.table(motion.id, actor.id);
-          }
+      this.props?.actors
+        .filter((x: ActorWithState) => x.id !== this.props.player.id)
+        .forEach((actor: ActorWithState) => {
+          this.props.availableMotions.forEach((motion: Motion) => {
+            const approval = this.getActorApproval(actor, motion);
+            if (approval > 2.5) {
+              this.table(motion.id, actor.id);
+            }
+          });
         });
-      });
     });
   }
 
@@ -98,10 +99,12 @@ class Game extends React.Component {
     let approval = 0;
     motion.effects.forEach(effect => {
       const position = actor.state.positions.find(p => p.stat === effect.stat);
+      const opposedPosition = actor.state.positions.find(p => stats[p.stat].opposed === effect.stat);
       if (position) {
         approval += (effect.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * (position.passion / 100);
-      } else if (stats[effect.stat].isNegative) {
-        approval -= effect.amount * 50 / 100;
+      }
+      if (opposedPosition) {
+        approval -= (effect.amount || 0) * (opposedPosition.attitude === 'raise' ? 1 : -1) * (opposedPosition.passion / 100);
       }
     });
     return approval;
@@ -110,7 +113,7 @@ class Game extends React.Component {
   actorsVote = () => {
     let changes: any[] = [];
     this.props?.actors
-      .filter((x: ActorWithState) => x.id !== (this.props.player?.id || '0'))
+      .filter((x: ActorWithState) => x.id !== this.props.player.id)
       .forEach((actor: ActorWithState) => {
         this.props?.availableMotions
           .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
@@ -173,7 +176,7 @@ class Game extends React.Component {
         <div>
           <ul className="d-flex">
             {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => (
-              <li key={x} style={{minWidth: '60px'}}><Stat stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></Stat></li>
+              <li key={x} style={{minWidth: '60px'}}><StatIcon stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></StatIcon></li>
             ))}
           </ul>
           <ul>
@@ -181,7 +184,9 @@ class Game extends React.Component {
               const policy: PolicyBaseData | undefined = this.props.policies.find(x => x.id === key);
               const stance = policy?.stances[this.props.currentSettlement?.state?.policies[key]];
               return (
-                <li key={key}>{policy?.label}: {stance?.label}</li>
+                <li key={key}>
+                  {policy?.label}: {stance?.label} ({stance?.effects.map(x => (<StatIcon key={x.stat} stat={x.stat} value={x.amount}></StatIcon>))})
+                </li>
               );
             })}
           </ul>
@@ -221,25 +226,25 @@ class Game extends React.Component {
               {this.props.phase?.id !== 'table' ? (
                 <div className="btn-group w-100">
                   <button style={{borderTopLeftRadius: 0}}
-                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || '0')?.vote !== 'yea' ? 'outline-' : ''}success`}
-                      onClick={() => this.vote(motion.id, this.props.player?.id || '0', 'yea')}>
+                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'yea' ? 'outline-' : ''}success`}
+                      onClick={() => this.vote(motion.id, this.props.player.id, 'yea')}>
                     Yea
                   </button>
                   <button style={{borderTopRightRadius: 0}}
-                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || '0')?.vote !== 'nay' ? 'outline-' : ''}danger`}
-                      onClick={() => this.vote(motion.id, this.props.player?.id || '0', 'nay')}>
+                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'nay' ? 'outline-' : ''}danger`}
+                      onClick={() => this.vote(motion.id, this.props.player.id, 'nay')}>
                     Nay
                   </button>
                 </div>
               ) : (
                 <div className="w-100">
                   <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
-                      disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player?.id || '0')}
+                      disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id)}
                       className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
-                      onClick={() => this.table(motion.id, this.props.player?.id || '0')}>
+                      onClick={() => this.table(motion.id, this.props.player.id)}>
                     {!!motion.onTable ? 'Rescind' : 'Table'}
                     &nbsp;&nbsp;&nbsp;
-                    <Stat stat='capital' value={motion.costToTable}></Stat>
+                    <StatIcon stat='capital' value={motion.costToTable}></StatIcon>
                   </button>
                 </div>
               )}
@@ -250,12 +255,12 @@ class Game extends React.Component {
           {this.props.actors.map((x, i) => (
             <div className="mb-3" key={i}>
               <div className="d-flex align-items-center">
-                <div className="w-25">{i+1}. {x.name}</div>
-                <div><Stat stat='capital' value={x.state.capital}></Stat></div>
+                <div className="w-25">{i+1}. {x.id !== this.props.player.id ? (<span>{x.name}</span>) : (<b>You</b>)}</div>
+                <div><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
               </div>
               {x.state.positions.map(position => (
                 <span key={position.stat} style={{opacity: position.passion / 100.0}}>
-                  <Stat stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></Stat>
+                  <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
                 </span>
               ))}
             </div>
@@ -269,21 +274,20 @@ class Game extends React.Component {
 const mapStateToProps = (state: State) => {
   const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
   const profile: {[id: string]: number} = {faith: 0, joy: 0, education: 0, vigilance: 0, disobedience: 0, poverty: 0, ignorance: 0, threat: 0};
-  /*
-  settlement.policies.forEach((motion: Motion) => {
-    motion.effects.forEach(effect => {
+  Object.keys(settlement.state.policies).forEach(policyId => {
+    const stance = settlement.state.policies[policyId];
+    state.policies.find(x => x.id === policyId)?.stances[stance].effects.forEach(effect => {
       profile[effect.stat] = profile[effect.stat] || 0;
       profile[effect.stat] += effect.amount;
     });
   });
-  */
 
   return {
     phase: state.phases[state.saveData.currentPhase || 0],
     phases: state.phases,
     currentSettlement: {...settlement, derived: {profile: profile}},
     actors: state.actors.map(x => (returnActorWithState(x, state.saveData.actorState[x.id]))),
-    player: state.actors.find((x: any) => x.id === 0),
+    player: state.actors.find((x: any) => x.id === 'player') || state.actors[0],
     motionsTabled: state.saveData.motionsTabled,
     motionVotes: state.saveData.motionVotes,
     currentPhaseCountdown: state.saveData.currentPhaseCountdown,

@@ -1,55 +1,65 @@
 [
 	{
-		"id": "dab",
-		"label": "Dabbing",
+		"id": "curfew",
+		"label": "Curfew",
 		"stances": {
-			"blessed": {
-				"label": "Blessed",
-				"effects": [{"stat": "faith", "amount": 15}]
+			"mandatory": {
+				"label": "Mandatory",
+				"effects": [{"stat": "disobedience", "amount": -10}, {"stat": "joy", "amount": -15}]
 			},
-			"permitted": {
-				"label": "Permitted",
-				"effects": [{"stat": "faith", "amount": 5}]
-			},
-			"forbidden": {
-				"label": "Forbidden",
-				"effects": [{"stat": "faith", "amount": -10}]
+			"none": {
+				"label": "Lifted",
+				"effects": [{"stat": "vigilance", "amount": -10}]
 			}
 		}
 	},
 	{
-		"id": "yeet",
-		"label": "Yeeting",
+		"id": "public",
+		"label": "Public Gathering",
 		"stances": {
-			"blessed": {
-				"label": "Blessed",
-				"effects": [{"stat": "education", "amount": 15}]
-			},
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "education", "amount": 5}]
+				"effects": [{"stat": "disobedience", "amount": 10}, {"stat": "education", "amount": 10}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "education", "amount": -10}]
+				"effects": [{"stat": "disobedience", "amount": -10}, {"stat": "education", "amount": -10}]
 			}
 		}
 	},
 	{
-		"id": "anal",
-		"label": "Hard Anal",
+		"id": "revenge",
+		"label": "Revenge",
 		"stances": {
 			"blessed": {
 				"label": "Blessed",
-				"effects": [{"stat": "joy", "amount": 15}]
+				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "disobedience", "amount": 15}]
 			},
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "joy", "amount": 5}]
+				"effects": [{"stat": "vigilance", "amount": 5}, {"stat": "disobedience", "amount": 5}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "joy", "amount": -10}]
+				"effects": [{"stat": "vigilance", "amount": -10}, {"stat": "disobedience", "amount": -5}]
+			}
+		}
+	},
+	{
+		"id": "sodomy",
+		"label": "Sodomy",
+		"stances": {
+			"blessed": {
+				"label": "Blessed",
+				"effects": [{"stat": "joy", "amount": 15}, {"stat": "faith", "amount": -20}]
+			},
+			"permitted": {
+				"label": "Permitted",
+				"effects": [{"stat": "joy", "amount": 5}, {"stat": "faith", "amount": -5}]
+			},
+			"forbidden": {
+				"label": "Forbidden",
+				"effects": [{"stat": "joy", "amount": -10}, {"stat": "faith", "amount": 15}]
 			}
 		}
 	}

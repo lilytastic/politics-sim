@@ -26,7 +26,7 @@ export interface PoliticalPosition {
 
 export const actors: ActorWithState[] = [
   {
-    id: '0',
+    id: 'player',
     name: 'Ananth',
     state: {
       positions: [
