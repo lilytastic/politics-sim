@@ -1,5 +1,5 @@
-import { Actor } from "../models/actor.model";
-import { Motion } from "./reducers";
+import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model";
+import { Motion } from "../models/motion.model";
 
 export const changeScreen = (screen: string) => ({
   type: 'CHANGE_SCREEN',
@@ -44,5 +44,5 @@ export const changeVotes = (changes: {actorId: string, motionId: string, vote: s
 
 export const loadSave = (data: any) => ({type: 'LOAD_SAVE', data})
 
-export const loadActors = (actors: Actor[]) => ({type: 'LOAD_ACTORS', actors})
-export const updateActors = (changes: {id: string, changes: Partial<Actor>}[]) => ({type: 'UPDATE_ACTORS', changes})
+export const loadActorsWithDefaultState = (actors: ActorWithState[]) => ({type: 'LOAD_ACTORS', actors})
+export const updateActors = (changes: {id: string, changes: Partial<ActorState>}[]) => ({type: 'UPDATE_ACTORS', changes})

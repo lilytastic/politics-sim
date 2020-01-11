@@ -1,11 +1,12 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux'
 import { interval, timer } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, loadActors, changeVote, passMotion, changeVotes } from '../store/actionCreators';
-import { Actor, actors } from '../models/actor.model';
-import { Motion, State } from '../store/reducers';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState } from '../store/actionCreators';
+import { ActorBaseData, ActorState, actors, ActorWithState, returnActorWithState } from '../models/actor.model';
+import { State } from '../store/reducers';
 import { MotionInfo } from '../components/MotionInfo';
 import { Stat } from '../components/Stat';
+import { Motion } from '../models/motion.model';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -15,7 +16,7 @@ class Game extends React.Component {
 
   constructor(props: any) {
     super(props);
-    props.dispatch(loadActors(actors));
+    props.dispatch(loadActorsWithDefaultState(actors));
     window.requestAnimationFrame(() => {
       this.returnToTablePhase();
     });
@@ -30,7 +31,7 @@ class Game extends React.Component {
     this.props.dispatch(refreshAvailableMotions());
     timer(5000).subscribe(() => {
       console.log('checking table preference');
-      this.props?.actors.filter((x: Actor) => x.id !== this.props.player?.id).forEach((actor: Actor) => {
+      this.props?.actors.filter((x: ActorWithState) => x.id !== this.props.player?.id).forEach((actor: ActorWithState) => {
         this.props.availableMotions.forEach((motion: Motion) => {
           const approval = this.getActorApproval(actor, motion);
           if (approval > 2.5) {
@@ -42,7 +43,7 @@ class Game extends React.Component {
   }
 
   grantAllowance = () => {
-    this.props.dispatch(updateActors((this.props.actors||[]).map((x: Actor) => ({id: x.id, changes: {capital: x.capital + 100}}))));
+    this.props.dispatch(updateActors((this.props.actors||[]).map((x: ActorWithState) => ({id: x.id, changes: {capital: x.state.capital + 100}}))));
   }
 
   getVote(motionId: string, actorId: string) {
@@ -59,12 +60,12 @@ class Game extends React.Component {
 
   advancePhase = () => {
     const currentPhase = this.props.phase;
-    if (currentPhase?.name === 'table' && !this.props.motionsTabled.length) {
+    if (currentPhase?.id === 'table' && !this.props.motionsTabled.length) {
       this.props.dispatch(changeCurrentPhaseCountdown(0));
       this.returnToTablePhase();
       return;
     }
-    if (currentPhase?.name === 'vote') {
+    if (currentPhase?.id === 'vote') {
       this.props.availableMotions
         .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
         .forEach((motion: Motion) => {
@@ -83,17 +84,17 @@ class Game extends React.Component {
     this.props.dispatch(changeCurrentPhase((this.props.currentPhase + 1) % this.props.phases.length));
 
     const newPhase = this.props.phase;
-    if (newPhase?.name === 'table') {
+    if (newPhase?.id === 'table') {
       this.returnToTablePhase();
     }
-    if (newPhase?.name === 'vote') {
+    if (newPhase?.id === 'vote') {
       this.actorsVote();
     }
   }
 
-  getActorApproval = (actor: Actor, motion: Motion) => {
+  getActorApproval = (actor: ActorWithState, motion: Motion) => {
     let approval = 0;
-    actor.positions.forEach(position => {
+    actor.state.positions.forEach(position => {
       const effect = motion.effects.find(x => x.stat === position.stat);
       approval += (effect?.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * (position.passion / 100)
     });
@@ -103,8 +104,8 @@ class Game extends React.Component {
   actorsVote = () => {
     let changes: any[] = [];
     this.props?.actors
-      .filter((x: Actor) => x.id !== (this.props.player?.id || '0'))
-      .forEach((actor: Actor) => {
+      .filter((x: ActorWithState) => x.id !== (this.props.player?.id || '0'))
+      .forEach((actor: ActorWithState) => {
         this.props?.availableMotions
           .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
           .forEach((motion: Motion) => {
@@ -123,18 +124,18 @@ class Game extends React.Component {
   table = (motionId: string, actorId: string) => {
     const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
-    const actor = this.props.actors.find((x: Actor) => x.id === actorId);
+    const actor = this.props.actors.find((x: ActorWithState) => x.id === actorId);
     if (!actor || !motion) {
       return;
     }
-    if (!tabled && actor.capital >= motion.costToTable) {
+    if (!tabled && actor.state.capital >= motion.costToTable) {
       this.props.dispatch(tableMotion(motionId, actor.id));
       this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}));
-      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital - motion.costToTable}}]));
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
     } else if (!!tabled && tabled.tabledBy === actor.id) {
       this.props.dispatch(rescindMotion(motionId));
       this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}));
-      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.capital + motion.costToTable}}]));
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
     }
   };
 
@@ -183,15 +184,15 @@ class Game extends React.Component {
         <div className="col">
           {this.props.availableMotions
               .map(motion => ({...motion, onTable: this.getById(this.props.motionsTabled, motion.id)}))
-              .filter(motion => this.props.phase?.name === 'table' || !!motion.onTable)
+              .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
               .map(motion => (
             <div key={motion.id}
                 className={"text-left btn-group-vertical mb-3 w-100 bg-light rounded"}>
               <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3">
                 <MotionInfo motion={motion}
-                    mode={this.props.phase?.name}
+                    mode={this.props.phase?.id}
                     tabledBy={this.getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
-                  {this.props.phase?.name !== 'table' ?
+                  {this.props.phase?.id !== 'table' ?
                     <span>
                       Yea: {this.props.actors?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0}
                       &nbsp;
@@ -202,7 +203,7 @@ class Game extends React.Component {
                   }
                 </MotionInfo>
               </button>
-              {this.props.phase?.name !== 'table' ? (
+              {this.props.phase?.id !== 'table' ? (
                 <div className="btn-group w-100">
                   <button style={{borderTopLeftRadius: 0}}
                       className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || '0')?.vote !== 'yea' ? 'outline-' : ''}success`}
@@ -235,9 +236,9 @@ class Game extends React.Component {
             <div className="mb-3" key={i}>
               <div className="d-flex align-items-center">
                 <div className="w-25">{i+1}. {x.name}</div>
-                <div><Stat stat='capital' value={x.capital}></Stat></div>
+                <div><Stat stat='capital' value={x.state.capital}></Stat></div>
               </div>
-              {x.positions.map(position => (
+              {x.state.positions.map(position => (
                 <Stat key={position.stat} stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></Stat>
               ))}
             </div>
@@ -249,20 +250,22 @@ class Game extends React.Component {
 }
 
 const mapStateToProps = (state: State) => {
-  const settlement = state.settlementData[0];
+  const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
   const profile: {[id: string]: number} = {faith: 0, joy: 0, education: 0, vigilance: 0, disobedience: 0, poverty: 0, ignorance: 0, threat: 0};
-  settlement.edicts.forEach((motion: Motion) => {
+  /*
+  settlement.policies.forEach((motion: Motion) => {
     motion.effects.forEach(effect => {
       profile[effect.stat] = profile[effect.stat] || 0;
       profile[effect.stat] += effect.amount;
     });
   });
+  */
 
   return {
     phase: state.phases[state.currentPhase || 0],
     phases: state.phases,
     currentSettlement: {...settlement, derived: {profile: profile}},
-    actors: state.actors,
+    actors: state.actors.map(x => (returnActorWithState(x, state.saveData.actorState[x.id]))),
     player: state.actors.find((x: any) => x.id === 0),
     motionsTabled: state.motionsTabled,
     motionVotes: state.motionVotes,

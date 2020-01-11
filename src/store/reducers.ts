@@ -1,37 +1,71 @@
-import { Actor } from "../models/actor.model";
+import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model";
+import { Motion } from "../models/motion.model";
+import { PolicyBaseData, PolicyState } from "../models/policy.model";
+
+declare global {
+  interface Array<T> {
+    toEntities(): {[id: string]: T};
+  }
+}
+
+if (!Array.prototype.toEntities) {
+  Array.prototype.toEntities = function<T>(preserveId: boolean = true) {
+    const obj: {[id: string]: T} = {};
+    for (let i = 0; i < this.length; i++) {
+      const entity = {...this[i]}
+      if (preserveId) {
+        delete entity.id;
+      }
+      obj[this[i].id] = entity;
+    }
+    return obj;
+  }
+}
 
 export interface State {
   screen: string;
-  actors: Actor[];
-  settlementData: SettlementData[];
+  actors: ActorBaseData[];
+  policies: PolicyBaseData[];
+  settlements: SettlementBaseData[];
   availableMotions: Motion[];
   motionsTabled: {id: string; tabledBy: string}[];
   motionVotes: {id: string; voters: {id: string, vote: string, reason: string}[]}[];
-  phases: {name: string, label: string, countdown: number}[];
+  phases: {id: string, label: string, countdown: number}[];
   currentPhase: number;
   currentPhaseCountdown: number;
+  saveData: SaveData;
 }
 
-export interface SettlementData {
-  id: string;
-  edicts: Motion[];
+export interface SaveData {
+  settlementState: {[id: string]: SettlementState};
+  actorState: {[id: string]: ActorState};
 }
 
-export interface Motion {
+export interface SettlementBaseData {
   id: string;
-  name: string;
-  costToTable: number;
-  effects: { stat: string, amount: number }[];
+}
+
+export interface SettlementState {
+  policies: PolicyState[];
 }
 
 const initialState: State = {
   screen: 'title',
+  saveData: {
+    actorState: {},
+    settlementState: {
+      'test': {
+        policies: []
+      }
+    }
+  },
   actors: [],
+  policies: [],
   availableMotions: [],
-  settlementData: [{id: 'test', edicts: []}],
+  settlements: [{id: 'test'}],
   motionsTabled: [],
   motionVotes: [], // type can be 'motivated', 'bought', 'respect'
-  phases: [{ name: 'table', label: 'Table', countdown: 20 }, { name: 'vote', label: 'Vote', countdown: 40 }],
+  phases: [{ id: 'table', label: 'Table', countdown: 20 }, { id: 'vote', label: 'Vote', countdown: 40 }],
   currentPhase: 0,
   currentPhaseCountdown: 0
 };
@@ -42,18 +76,38 @@ export function rootReducer(state = initialState, action: any): State {
   }
   switch (action.type) {
     case 'LOAD_ACTORS':
-      return { ...state, actors: (action.actors||[]) };
-    case 'UPDATE_ACTORS':
-      return { ...state, actors: state.actors.map((actor: any) => {
-        const changes = action.changes.find((x: any) => x.id === actor.id)?.changes;
-        if (changes) {
-          return {...actor, ...changes};
-        } else {
-          return actor;
+      const newState = action.actors.map((x: ActorWithState) => ({...state.saveData.actorState, ...x.state, id: x.id})).toEntities(false);
+      return {
+        ...state,
+        actors: action.actors.map((x: ActorWithState) => {const mutated = {...x}; delete mutated.state; return mutated;}),
+        saveData: {
+          ...state.saveData,
+          actorState: {...state.saveData.actorState, ...newState}
         }
-      }) };
+      };
+    case 'UPDATE_ACTORS':
+      const _newState = action.changes.map((x: any) => ({...state.saveData.actorState[x.id], ...x.changes})).toEntities(false);
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          actorState: {...state.saveData.actorState, ..._newState}
+        }
+      };
     case 'PASS_MOTION':
-      return {...state, settlementData: state.settlementData.map((x: any) => ({...x, edicts: [...x.edicts, action.motion]}))}
+      const settlementState = Object.keys(state.saveData.settlementState)
+        .map((key) => {
+          const currentState = state.saveData.settlementState[key];
+          return {...currentState, policies: [...currentState.policies, action.motion]};
+        })
+        .toEntities();
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          settlementState: settlementState
+        }
+      };
     case 'CHANGE_VOTE':
       const change = action.change;
       return {
