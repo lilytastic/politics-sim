@@ -47,7 +47,7 @@ class Game extends React.Component {
   }
 
   getVote(motionId: string, actorId: string) {
-    return this.props.motionVotes.find((x: any) => x.id === motionId)?.voters?.find((x: any) => x.id === actorId);
+    return this.props.motionVotes[motionId][actorId];
   }
 
   onTick = () => {
@@ -262,17 +262,17 @@ const mapStateToProps = (state: State) => {
   */
 
   return {
-    phase: state.phases[state.currentPhase || 0],
+    phase: state.phases[state.saveData.currentPhase || 0],
     phases: state.phases,
     currentSettlement: {...settlement, derived: {profile: profile}},
     actors: state.actors.map(x => (returnActorWithState(x, state.saveData.actorState[x.id]))),
     player: state.actors.find((x: any) => x.id === 0),
-    motionsTabled: state.motionsTabled,
-    motionVotes: state.motionVotes,
-    currentPhaseCountdown: state.currentPhaseCountdown,
-    currentPhase: state.currentPhase,
+    motionsTabled: state.saveData.motionsTabled,
+    motionVotes: state.saveData.motionVotes,
+    currentPhaseCountdown: state.saveData.currentPhaseCountdown,
+    currentPhase: state.saveData.currentPhase,
     screen: state.screen,
-    availableMotions: state.availableMotions
+    availableMotions: state.saveData.availableMotions
   }
 };
 

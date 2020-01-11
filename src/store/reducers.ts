@@ -27,18 +27,18 @@ export interface State {
   actors: ActorBaseData[];
   policies: PolicyBaseData[];
   settlements: SettlementBaseData[];
-  availableMotions: Motion[];
-  motionsTabled: {id: string; tabledBy: string}[];
-  motionVotes: {id: string; voters: {id: string, vote: string, reason: string}[]}[];
   phases: {id: string, label: string, countdown: number}[];
-  currentPhase: number;
-  currentPhaseCountdown: number;
   saveData: SaveData;
 }
 
 export interface SaveData {
   settlementState: {[id: string]: SettlementState};
   actorState: {[id: string]: ActorState};
+  availableMotions: Motion[];
+  motionsTabled: {id: string; tabledBy: string}[];
+  motionVotes: {[id: string]: {[id: string]: {vote: string, reason: string}}};
+  currentPhase: number;
+  currentPhaseCountdown: number;
 }
 
 export interface SettlementBaseData {
@@ -51,23 +51,23 @@ export interface SettlementState {
 
 const initialState: State = {
   screen: 'title',
+  actors: [],
+  policies: [],
+  settlements: [{id: 'test'}],
+  phases: [{ id: 'table', label: 'Table', countdown: 20 }, { id: 'vote', label: 'Vote', countdown: 40 }],
   saveData: {
     actorState: {},
+    availableMotions: [],
+    motionsTabled: [],
+    motionVotes: {}, // type can be 'motivated', 'bought', 'respect'
     settlementState: {
       'test': {
         policies: []
       }
-    }
-  },
-  actors: [],
-  policies: [],
-  availableMotions: [],
-  settlements: [{id: 'test'}],
-  motionsTabled: [],
-  motionVotes: [], // type can be 'motivated', 'bought', 'respect'
-  phases: [{ id: 'table', label: 'Table', countdown: 20 }, { id: 'vote', label: 'Vote', countdown: 40 }],
-  currentPhase: 0,
-  currentPhaseCountdown: 0
+    },
+    currentPhase: 0,
+    currentPhaseCountdown: 0
+  }
 };
 
 export function rootReducer(state = initialState, action: any): State {
@@ -110,41 +110,50 @@ export function rootReducer(state = initialState, action: any): State {
       };
     case 'CHANGE_VOTE':
       const change = action.change;
+      const _motionVotes = {...state.saveData.motionVotes};
+      _motionVotes[change.motionId] = _motionVotes[change.motionId] || {};
+      _motionVotes[change.motionId][change.actorId] = {vote: change.vote, reason: change.reason};
       return {
         ...state,
-        motionVotes: state.motionVotes.map(motion => {
-          if (motion.id === change.motionId) {
-            return {...motion, voters: motion.voters.map(_vote => _vote.id === change.actorId ? {..._vote, vote: change.vote, reason: change.reason} : _vote)};
-          } else {
-            return motion;
-          }
-        })
+        saveData: {
+          ...state.saveData,
+          motionVotes: _motionVotes
+        }
       };
     case 'CHANGE_VOTES':
-      const changes = action.changes;
-      const motionVotes = state.motionVotes.map(motion => {
-        const _changes = changes.filter((x: any) => x.motionId === motion.id);
-        const voters = motion.voters.map(_vote => {
-          const change = _changes.find((x: any) => x.actorId === _vote.id);
-          return change ? {..._vote, vote: change.vote, reason: change.reason} : _vote
-        })
-        return {...motion, voters: voters};
+      const changes: {actorId: string, motionId: string, vote: string, reason: string}[] = action.changes;
+      const motionVotes = {...state.saveData.motionVotes};
+      changes.forEach(change => {
+        motionVotes[change.motionId] = motionVotes[change.motionId] || {};
+        motionVotes[change.motionId][change.actorId] = {vote: change.vote, reason: change.reason};
       });
       return {
         ...state,
-        motionVotes: motionVotes
+        saveData: {
+          ...state.saveData,
+          motionVotes: motionVotes
+        }
       };
     case 'TABLE_MOTION':
-      return { ...state, motionsTabled: [...state.motionsTabled, { id: action.motion, tabledBy: action.tabledBy }] };
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          motionsTabled: [...state.saveData.motionsTabled, { id: action.motion, tabledBy: action.tabledBy }]
+        }
+      };
     case 'RESCIND_MOTION':
-      let index = state.motionsTabled.findIndex(x => x.id === action.motion);
-      return { ...state, motionsTabled: [...state.motionsTabled.slice(0, index), ...state.motionsTabled.slice(index + 1)] };
+      let index = state.saveData.motionsTabled.findIndex(x => x.id === action.motion);
+      return {
+        ...state,
+        saveData: {...state.saveData, motionsTabled: [...state.saveData.motionsTabled.slice(0, index), ...state.saveData.motionsTabled.slice(index + 1)] }
+      };
     case 'CHANGE_SCREEN':
       return { ...state, screen: action.screen };
     case 'CHANGE_CURRENT_PHASE':
-      return { ...state, currentPhase: action.currentPhase, currentPhaseCountdown: 0 };
+      return { ...state, saveData: {...state.saveData, currentPhase: action.currentPhase, currentPhaseCountdown: 0 }};
     case 'CHANGE_CURRENT_PHASE_COUNTDOWN':
-      return { ...state, currentPhaseCountdown: action.currentPhaseCountdown };
+      return { ...state, saveData: {...state.saveData, currentPhaseCountdown: action.currentPhaseCountdown }};
     case 'REFRESH_AVAILABLE_MOTIONS':
       const motions = [];
       for (let i = 0; i < 6; i++) {
@@ -165,11 +174,12 @@ export function rootReducer(state = initialState, action: any): State {
       }
       return {
         ...state,
-        motionsTabled: [],
-        motionVotes: motions.map(motion => (
-          {id: motion.id, voters: state.actors.map(actor => ({id: actor.id, reason: 'freely', vote: 'abstain'}))}
-        )),
-        availableMotions: motions
+        saveData: {
+          ...state.saveData,
+          motionsTabled: [],
+          motionVotes: {},
+          availableMotions: motions
+        }
       };
     default:
       return state;
