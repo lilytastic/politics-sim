@@ -14,7 +14,7 @@ export const MotionInfo = ({ motion, tabledBy, children }: any) => {return (
     <div className="d-flex justify-content-between">
       <div>
       {motion.effects.map((effect: any, ii: number) => (
-        <span key={ii} className="d-inline-block" style={{width: '55px', color: effect.amount > 0 ? 'green' : effect.amount < 0 ? 'crimson' : 'initial'}}>
+        <span key={ii} className="d-inline-block text-left" style={{width: '55px', color: effect.amount > 0 ? 'green' : effect.amount < 0 ? 'crimson' : 'initial'}}>
           <Stat mode='modifier' stat={effect.stat} value={effect.amount}></Stat>
           &nbsp;
         </span>

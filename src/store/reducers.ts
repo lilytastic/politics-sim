@@ -5,9 +5,9 @@ export interface State {
   actors: Actor[];
   settlementData: SettlementData[];
   availableMotions: Motion[];
-  motionsTabled: {id: number; tabledBy: number}[];
-  motionVotes: {id: number; voters: {id: number, vote: string, reason: string}[]}[];
-  phases: {name: string, countdown: number}[];
+  motionsTabled: {id: string; tabledBy: string}[];
+  motionVotes: {id: string; voters: {id: string, vote: string, reason: string}[]}[];
+  phases: {name: string, label: string, countdown: number}[];
   currentPhase: number;
   currentPhaseCountdown: number;
 }
@@ -18,7 +18,7 @@ export interface SettlementData {
 }
 
 export interface Motion {
-  id: number;
+  id: string;
   name: string;
   costToTable: number;
   effects: { stat: string, amount: number }[];
@@ -31,7 +31,7 @@ const initialState: State = {
   settlementData: [{id: 'test', edicts: []}],
   motionsTabled: [],
   motionVotes: [], // type can be 'motivated', 'bought', 'respect'
-  phases: [{ name: 'table', countdown: 20 }, { name: 'vote', countdown: 40 }],
+  phases: [{ name: 'table', label: 'Table', countdown: 20 }, { name: 'vote', label: 'Vote', countdown: 40 }],
   currentPhase: 0,
   currentPhaseCountdown: 0
 };
@@ -103,7 +103,7 @@ export function rootReducer(state = initialState, action: any): State {
           });
         }
         motions.push({
-          id: i,
+          id: i.toString(),
           name: 'Motion ' + (i + 1),
           effects: effects,
           costToTable: effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) * 20

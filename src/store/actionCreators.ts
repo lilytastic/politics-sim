@@ -22,22 +22,22 @@ export const passMotion = (motion: Motion) => ({
   motion
 });
 
-export const tableMotion = (motion: number, tabledBy: number) => ({
+export const tableMotion = (motion: string, tabledBy: string) => ({
   type: 'TABLE_MOTION',
   motion,
   tabledBy
 });
 
-export const rescindMotion = (motion: number) => ({
+export const rescindMotion = (motion: string) => ({
   type: 'RESCIND_MOTION',
   motion
 });
 
-export const changeVote = (change: {actorId: number, motionId: number, vote: string, reason: string}) => ({
+export const changeVote = (change: {actorId: string, motionId: string, vote: string, reason: string}) => ({
   type: 'CHANGE_VOTE',
   change
 })
-export const changeVotes = (changes: {actorId: number, motionId: number, vote: string, reason: string}[]) => ({
+export const changeVotes = (changes: {actorId: string, motionId: string, vote: string, reason: string}[]) => ({
   type: 'CHANGE_VOTES',
   changes
 })
@@ -45,4 +45,4 @@ export const changeVotes = (changes: {actorId: number, motionId: number, vote: s
 export const loadSave = (data: any) => ({type: 'LOAD_SAVE', data})
 
 export const loadActors = (actors: Actor[]) => ({type: 'LOAD_ACTORS', actors})
-export const updateActors = (changes: {id: number, changes: Partial<Actor>}[]) => ({type: 'UPDATE_ACTORS', changes})
+export const updateActors = (changes: {id: string, changes: Partial<Actor>}[]) => ({type: 'UPDATE_ACTORS', changes})

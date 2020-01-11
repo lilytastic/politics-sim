@@ -45,7 +45,7 @@ class Game extends React.Component {
     this.props.dispatch(updateActors((this.props.actors||[]).map((x: Actor) => ({id: x.id, changes: {capital: x.capital + 100}}))));
   }
 
-  getVote(motionId: number, actorId: number) {
+  getVote(motionId: string, actorId: string) {
     return this.props.motionVotes.find((x: any) => x.id === motionId)?.voters?.find((x: any) => x.id === actorId);
   }
 
@@ -66,7 +66,7 @@ class Game extends React.Component {
     }
     if (currentPhase?.name === 'vote') {
       this.props.availableMotions
-        .filter((motion: Motion) => this.isTabled(motion.id))
+        .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
         .forEach((motion: Motion) => {
           const yea = this.props.actors
             ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0;
@@ -118,7 +118,7 @@ class Game extends React.Component {
     this.props.dispatch(changeVotes(changes));
   }
 
-  table = (motionId: number, actorId = 0) => {
+  table = (motionId: string, actorId = '0') => {
     const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
     const actor = this.props.actors.find((x: Actor) => x.id === actorId);
@@ -136,7 +136,7 @@ class Game extends React.Component {
     }
   };
 
-  vote = (motionId: number, actorId = 0, vote: string | null = null) => {
+  vote = (motionId: string, actorId = '0', vote: string | null = null) => {
     const actor = this.props.actors.find((x: any) => x.id === actorId);
     const currentVote = this.getVote(motionId, actorId);
     if (!actor) {
@@ -151,15 +151,11 @@ class Game extends React.Component {
     console.log('voting', motionId);
   };
 
-  getActor = (id: number) => {
-    return this.props.actors.find((x: Actor) => x.id === id);
+  getById = (arr: any[], id: string) => {
+    return arr.find((x: any) => x.id === id);
   }
 
-  isTabled = (id: number) => {
-    return !!this.props.motionsTabled.find((x: any) => x.id === id)
-  }
-
-  phaseFunc: {[id: string]: (motionid: number) => void} = {table: this.table, vote: this.vote};
+  phaseFunc: {[id: string]: (motionid: string) => void} = {table: this.table, vote: this.vote};
 
   render = () => (
     <div className="p-5 content">
@@ -175,54 +171,57 @@ class Game extends React.Component {
 
         <h2 className="mt-5">Politics</h2>
         <div>
-          Current Phase: {this.props.phase?.name} (<span style={{color: this.props.phase?.countdown - this.props.currentPhaseCountdown < 10 ? 'crimson' : 'inherit'}}>
-            {this.props.phase?.countdown - this.props.currentPhaseCountdown}s
-          </span>)
+          Current Phase: <b>{this.props.phase?.label}</b>&nbsp;
+          <span style={{color: this.props.phase?.countdown - this.props.currentPhaseCountdown < 10 ? 'crimson' : 'inherit'}}>
+            ({this.props.phase?.countdown - this.props.currentPhaseCountdown}s)
+          </span>
         </div>
       </div>
       <div className="row">
         <div className="col">
-          {this.props.availableMotions.filter((motion: any) => this.props.phase?.name === 'table' || this.isTabled(motion.id)).map((motion: any, i: number) => (
+          {this.props.availableMotions
+              .map(motion => ({...motion, onTable: this.getById(this.props.motionsTabled, motion.id)}))
+              .filter(motion => this.props.phase?.name === 'table' || !!motion.onTable)
+              .map(motion => (
             <div key={motion.id}
-                className={"text-left mb-3 w-100 bg-light rounded"}>
-              <div className="rounded-top border border-secondary border-bottom-0 p-2 px-3">
-                <MotionInfo
-                  motion={motion}
-                  mode={this.props.phase?.name}
-                  tabledBy={this.getActor(this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy || -1)}>
+                className={"text-left btn-group-vertical mb-3 w-100 bg-light rounded"}>
+              <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3">
+                <MotionInfo motion={motion}
+                    mode={this.props.phase?.name}
+                    tabledBy={this.getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
                   {this.props.phase?.name !== 'table' ?
                     <span>
-                      Yea: {this.props.actors
-                        ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0}
+                      Yea: {this.props.actors?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0}
                       &nbsp;
-                      Nay: {this.props.actors
-                        ?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0}
+                      Nay: {this.props.actors?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0}
                     </span>
                   :
-                    <Stat stat='capital' value={motion.costToTable}></Stat>
+                    null
                   }
                 </MotionInfo>
-              </div>
+              </button>
               {this.props.phase?.name !== 'table' ? (
                 <div className="btn-group w-100">
                   <button style={{borderTopLeftRadius: 0}}
-                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || 0)?.vote !== 'yea' ? 'outline-' : ''}success`}
+                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || '0')?.vote !== 'yea' ? 'outline-' : ''}success`}
                       onClick={() => this.vote(motion.id, this.props.player?.id, 'yea')}>
                     Yea
                   </button>
                   <button style={{borderTopRightRadius: 0}}
-                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || 0)?.vote !== 'nay' ? 'outline-' : ''}danger`}
+                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player?.id || '0')?.vote !== 'nay' ? 'outline-' : ''}danger`}
                       onClick={() => this.vote(motion.id, this.props.player?.id, 'nay')}>
                     Nay
                   </button>
                 </div>
               ) : (
-                <div>
+                <div className="w-100">
                   <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
-                      disabled={!!this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy && this.props.motionsTabled.find((x: any) => x.id === motion.id)?.tabledBy !== (this.props.player?.id || 0)}
-                      className={"btn btn-block " + (!!this.props.motionsTabled.find((x: any) => x.id === motion.id) ? "btn-outline-danger" : "btn-outline-primary")}
+                      disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player?.id || '0')}
+                      className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
                       onClick={() => this.table(motion.id, this.props.player?.id)}>
-                    {!!this.props.motionsTabled.find((x: any) => x.id === motion.id) ? 'Rescind' : 'Table'}
+                    {!!motion.onTable ? 'Rescind' : 'Table'}
+                    &nbsp;&nbsp;&nbsp;
+                    <Stat stat='capital' value={motion.costToTable}></Stat>
                   </button>
                 </div>
               )}
@@ -230,7 +229,7 @@ class Game extends React.Component {
           ))}
         </div>
         <div className="col">
-          {this.props.actors.map((x: Actor, i: number) => (
+          {this.props.actors.map((x, i) => (
             <div className="mb-3" key={i}>
               <div className="d-flex align-items-center">
                 <div className="w-25">{i+1}. {x.name}</div>
