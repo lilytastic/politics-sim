@@ -174,7 +174,7 @@ class Game extends React.Component {
       <div className="mb-4">
         <h2>Profile</h2>
         <div>
-          <ul className="d-flex">
+          <ul className="d-flex flex-wrap" style={{width: '250px'}}>
             {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => (
               <li key={x} style={{minWidth: '60px'}}><StatIcon stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></StatIcon></li>
             ))}

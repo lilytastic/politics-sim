@@ -112,15 +112,15 @@
 		"stances": {
 			"blessed": {
 				"label": "Blessed",
-				"effects": [{"stat": "joy", "amount": 15}, {"stat": "purpose", "amount": -20}]
+				"effects": [{"stat": "joy", "amount": 15}, {"stat": "dignity", "amount": 20}]
 			},
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "joy", "amount": 5}, {"stat": "purpose", "amount": -5}]
+				"effects": [{"stat": "joy", "amount": 5}, {"stat": "dignity", "amount": 5}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "joy", "amount": -10}, {"stat": "purpose", "amount": 15}]
+				"effects": [{"stat": "joy", "amount": -10}, {"stat": "dignity", "amount": -15}]
 			}
 		}
 	}

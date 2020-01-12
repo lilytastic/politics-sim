@@ -16,7 +16,7 @@ export const stats: {[id: string]: Stat} = {
   'purpose': {
     label: 'Purpose',
     opposed: 'dignity',
-    icon: 'pray',
+    icon: 'praying-hands',
     color: 'MEDIUMPURPLE'
   },
   'joy': {
