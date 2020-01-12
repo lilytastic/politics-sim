@@ -6,7 +6,7 @@
 		"stances": {
 			"mandatory": {
 				"label": "Mandatory",
-				"effects": [{"stat": "dignity", "amount": -10}, {"stat": "joy", "amount": -15}]
+				"effects": [{"stat": "joy", "amount": -10}, {"stat": "vigilance", "amount": 15}]
 			}
 		}
 	},

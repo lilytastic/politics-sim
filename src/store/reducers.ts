@@ -131,7 +131,8 @@ export interface SaveData {
   actorState: {[id: string]: ActorState};
   availableMotions: Motion[];
   motionsTabled: {id: string; tabledBy: string}[];
-  motionVotes: {[id: string]: {[id: string]: {vote: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, reason: string}}};
+  currentVoteOffers: {[actorId: string]: Vote[]};
+  motionVotes: {[motionId: string]: {[actorId: string]: {vote: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, reason: string}}};
   currentPhase: number;
   currentPhaseCountdown: number;
 }
@@ -148,6 +149,7 @@ const initialState: State = {
     availableMotions: [],
     motionsTabled: [],
     motionVotes: {}, // type can be 'motivated', 'bought', 'respect'
+    currentVoteOffers: {},
     settlementState: {
       'test': {
         policies: {},
@@ -251,6 +253,14 @@ export function rootReducer(state = initialState, action: any): State {
         saveData: {
           ...state.saveData,
           motionVotes: motionVotes
+        }
+      };
+    case 'SET_VOTE_OFFERS':
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          currentVoteOffers: action.offers
         }
       };
     case 'TABLE_MOTION':
