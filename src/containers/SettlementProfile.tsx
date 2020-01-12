@@ -1,14 +1,12 @@
 import React from 'react';
 import { StatIcon } from "../components/StatIcon";
 import { PolicyBaseData } from '../models/policy.model';
-import { State } from '../store/reducers';
-import { connect, ConnectedProps } from 'react-redux';
 
 export const SettlementProfile = ({settlement, policies}: {settlement: any, policies: PolicyBaseData[]}) => {return (
   <div>
     <ul className="d-flex flex-wrap" style={{ width: '250px' }}>
       {Object.keys(settlement?.derived?.profile).map(x => (
-        <li key={x} style={{ minWidth: '60px' }}><StatIcon stat={x} mode='modifier' value={settlement?.derived?.profile[x]}></StatIcon></li>
+        <li key={x} style={{ minWidth: '60px' }}><StatIcon stat={x} value={settlement?.derived?.profile[x]}></StatIcon></li>
       ))}
     </ul>
     <ul>
@@ -30,22 +28,3 @@ export const SettlementProfile = ({settlement, policies}: {settlement: any, poli
     </ul>
   </div>
 )}
-
-/*
-const mapStateToProps = (state: State) => {
-  return {
-    policies: state.policies
-  }
-};
-
-const connector = connect(
-  mapStateToProps
-);
-
-type PropsFromRedux = ConnectedProps<typeof connector>
-type Props = PropsFromRedux & {
-  backgroundColor: string
-}
-
-export default connector(SettlementProfile);
-*/

@@ -18,6 +18,11 @@ export const refreshAvailableMotions = () => ({
   type: 'REFRESH_AVAILABLE_MOTIONS'
 });
 
+export const inspectMotion = (motion: string) => ({
+  type: 'INSPECT_MOTION',
+  motion
+});
+
 export const passMotion = (motion: Motion) => ({
   type: 'PASS_MOTION',
   motion

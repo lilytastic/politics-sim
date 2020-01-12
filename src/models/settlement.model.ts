@@ -9,3 +9,8 @@ export interface SettlementState {
 	offices: {[id: string]: PoliticalOffice};
 	officeOccupants: {[id: string]: string};
 }
+
+export interface SettlementWithState extends SettlementBaseData {
+	state: SettlementState;
+}
+

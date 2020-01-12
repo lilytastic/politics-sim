@@ -1,6 +1,6 @@
 import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
-import { PolicyBaseData, PolicyState } from "../models/policy.model";
+import { PolicyBaseData } from "../models/policy.model";
 import * as Policies from "../content/policies.json";
 import { SettlementState, SettlementBaseData } from "../models/settlement.model";
 import { POLITICAL_STRUCTURE_TRIBAL } from "../content/politicalStructure.const";
@@ -17,14 +17,10 @@ if (!Array.prototype.shuffle) {
     const woo = [...this];
     var currentIndex = this.length, temporaryValue, randomIndex;
 
-    // While there remain elements to shuffle...
     while (0 !== currentIndex) {
-
-      // Pick a remaining element...
       randomIndex = Math.floor(Math.random() * currentIndex);
       currentIndex -= 1;
 
-      // And swap it with the current element.
       temporaryValue = woo[currentIndex];
       woo[currentIndex] = woo[randomIndex];
       woo[randomIndex] = temporaryValue;
@@ -64,6 +60,7 @@ export interface SaveData {
   settlementState: {[id: string]: SettlementState};
   actorState: {[id: string]: ActorState};
   availableMotions: Motion[];
+  inspectedMotion: string;
   motionsTabled: {id: string; tabledBy: string}[];
   currentVoteOffers: {[actorId: string]: Vote[]};
   motionVotes: {[motionId: string]: {[actorId: string]: {vote: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, reason: string}}};
@@ -84,6 +81,7 @@ const initialState: State = {
     motionsTabled: [],
     motionVotes: {}, // type can be 'motivated', 'bought', 'respect'
     currentVoteOffers: {},
+    inspectedMotion: '',
     settlementState: {
       'test': {
         policies: {},
@@ -197,6 +195,14 @@ export function rootReducer(state = initialState, action: any): State {
           currentVoteOffers: action.offers
         }
       };
+    case 'INSPECT_MOTION':
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          inspectedMotion: state.saveData.inspectedMotion === action.motion ? '' : action.motion
+        }
+      };
     case 'TABLE_MOTION':
       return {
         ...state,
@@ -273,6 +279,7 @@ export function rootReducer(state = initialState, action: any): State {
           ...state.saveData,
           motionsTabled: [],
           motionVotes: {},
+          inspectedMotion: '',
           availableMotions: motions
         }
       };

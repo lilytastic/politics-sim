@@ -1,0 +1,166 @@
+import React from 'react';
+import { StatIcon } from '../components/StatIcon';
+import { ActorWithState, returnActorWithState } from '../models/actor.model';
+import { getById } from '../helpers/entity.helpers';
+import { State, Vote } from '../store/reducers';
+import { changeVote, inspectMotion, tableMotion, updateActors, rescindMotion } from '../store/actionCreators';
+import { connect, ConnectedProps } from 'react-redux';
+import { MotionInfo } from '../components/MotionInfo';
+import { Motion } from '../models/motion.model';
+
+class SettlementMotions extends React.Component {
+  // @ts-ignore;
+  props: Props;
+
+  getVote(motionId: string, actorId: string): Vote {
+    return {actorId, motionId, ...this.props.motionVotes[motionId]?.[actorId]};
+  }
+
+  table = (motionId: string, actorId: string) => {
+    const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
+    const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
+    const actor = this.props.actors.find((x: ActorWithState) => x.id === actorId);
+    if (!actor || !motion) {
+      return;
+    }
+    if (!tabled && actor.state.capital >= motion.costToTable) {
+      this.props.dispatch(tableMotion(motionId, actor.id));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}));
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
+    } else if (!!tabled && tabled.tabledBy === actor.id) {
+      this.props.dispatch(rescindMotion(motionId));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}));
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
+    }
+  };
+
+  vote = (motionId: string, actorId: string, vote: string | null = null) => {
+    const actor = this.props.actors.find((x: any) => x.id === actorId);
+    const currentVote = this.getVote(motionId, actorId);
+    if (!actor) {
+      return;
+    }
+    this.props.dispatch(changeVote({
+      ...currentVote,
+      actorId: actor.id,
+      motionId: motionId,
+      vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
+      reason: 'freely'
+    }));
+    console.log('voting', motionId);
+  };
+
+  phaseFunc: {[id: string]: (motionid: string, actorId: string) => void} = {table: this.table, vote: this.vote};
+
+  makeOffer = (actorId: string, motionId: string, vote: string, amountSpent: number) => {
+    this.props.dispatch(changeVote({
+      actorId: actorId,
+      motionId: motionId,
+      vote: vote,
+      reason: 'bought',
+      purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}
+    }));
+  }
+
+  getOffers = (motion: Motion, vote: string) => {
+    return this.props.currentVoteOffers['player']
+      ?.filter(x => x.motionId === motion.id && x.vote === vote)
+      .sort((a, b) => (a.purchaseAgreement?.amountSpent || 0) > (b.purchaseAgreement?.amountSpent || 0) ? -1 : 1);
+  }
+
+  render = () => (
+    <div>
+      {this.props.availableMotions
+          .map(motion => ({...motion, onTable: getById(this.props.motionsTabled, motion.id)}))
+          .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
+          .map(motion => (
+        <div key={motion.id}
+            className={"text-left motion__wrapper btn-group-vertical mb-3 w-100 bg-light rounded" + (this.props.inspectedMotion === motion.id && ' motion__wrapper--active')}>
+          <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3"
+              onClick={() => this.props.dispatch(inspectMotion(motion.id))}>
+            <MotionInfo motion={motion}
+                mode={this.props.phase?.id}
+                tabledBy={getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
+              {this.props.phase?.id !== 'table' ?
+                <span>
+                  Yea: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0})
+                  &nbsp;
+                  Nay: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0})
+                </span>
+              :
+                null
+              }
+            </MotionInfo>
+          </button>
+          {this.props.phase?.id !== 'table' ? (
+            <div className="btn-group w-100">
+              <button style={{borderTopLeftRadius: 0}}
+                  className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'yea' ? 'outline-' : ''}success`}
+                  onClick={() => this.vote(motion.id, this.props.player.id, 'yea')}>
+                Yea
+                {!!this.getOffers(motion, 'yea')?.length && (
+                  <span>
+                    &nbsp;
+                    <StatIcon stat='capital' value={this.getOffers(motion, 'yea')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
+                  </span>
+                )}
+              </button>
+              <button style={{borderTopRightRadius: 0}}
+                  className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'nay' ? 'outline-' : ''}danger`}
+                  onClick={() => this.vote(motion.id, this.props.player.id, 'nay')}>
+                Nay
+                &nbsp;
+                {!!this.getOffers(motion, 'nay')?.length && (
+                  <span>
+                    &nbsp;
+                    <StatIcon stat='capital' value={this.getOffers(motion, 'nay')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
+                  </span>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="w-100">
+              <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
+                  disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id)}
+                  className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
+                  onClick={() => this.table(motion.id, this.props.player.id)}>
+                {!!motion.onTable ? 'Rescind' : 'Draft'}
+                &nbsp;&nbsp;&nbsp;
+                <StatIcon stat='capital' value={motion.costToTable}></StatIcon>
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const mapStateToProps = (state: State) => {
+  const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
+
+  const actors = state.actors.map(x => ({...returnActorWithState(x, state.saveData.actorState[x.id])})).map(actor => {
+    const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
+    return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
+  }).sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
+
+  return {
+    actors: actors,
+    player: actors.find((x: any) => x.id === 'player') || actors[0],
+    phase: state.phases[state.saveData.currentPhase || 0],
+    motionsTabled: state.saveData.motionsTabled,
+    motionVotes: state.saveData.motionVotes,
+    currentVoteOffers: state.saveData.currentVoteOffers,
+    inspectedMotion: state.saveData.inspectedMotion,
+    availableMotions: state.saveData.availableMotions
+  }
+};
+
+const connector = connect(
+  mapStateToProps
+);
+
+type PropsFromRedux = ConnectedProps<typeof connector>
+type Props = PropsFromRedux;
+
+export default connector(SettlementMotions);

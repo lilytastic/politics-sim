@@ -1,24 +1,21 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux'
 import { interval, timer } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers } from '../store/actionCreators';
-import { ActorBaseData, ActorState, actors, ActorWithState, returnActorWithState } from '../models/actor.model';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion } from '../store/actionCreators';
+import { actors, ActorWithState, returnActorWithState, ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { State, Vote } from '../store/reducers';
-import { MotionInfo } from '../components/MotionInfo';
-import { StatIcon } from '../components/StatIcon';
 import { Motion } from '../models/motion.model';
-import { stats } from '../models/stats.model';
-import { PolicyState, PolicyBaseData } from '../models/policy.model';
-import { getAssociatedVoteColor, getCostToInfluence, getActorApproval } from '../helpers/politics.helpers';
+import { getActorApproval, getActorsWithApproval } from '../helpers/politics.helpers';
 import { getById } from '../helpers/entity.helpers';
 import { SettlementProfile } from './SettlementProfile';
+import SettlementCircle from './SettlementCircle';
+import SettlementMotions from './SettlementMotions';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
 class Game extends React.Component {
   // @ts-ignore;
   props: Props;
-  inspectedMotion = '';
 
   constructor(props: any) {
     super(props);
@@ -31,6 +28,24 @@ class Game extends React.Component {
       this.onTick();
     });
   }
+
+  table = (motionId: string, actorId: string) => {
+    const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
+    const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
+    const actor = this.props.actors.find((x: ActorWithState) => x.id === actorId);
+    if (!actor || !motion) {
+      return;
+    }
+    if (!tabled && actor.state.capital >= motion.costToTable) {
+      this.props.dispatch(tableMotion(motionId, actor.id));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}));
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
+    } else if (!!tabled && tabled.tabledBy === actor.id) {
+      this.props.dispatch(rescindMotion(motionId));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}));
+      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
+    }
+  };
 
   returnToTablePhase = () => {
     this.grantAllowance();
@@ -73,6 +88,12 @@ class Game extends React.Component {
     }
   }
 
+  getOffers = (motion: Motion, vote: string) => {
+    return this.props.currentVoteOffers['player']
+      ?.filter(x => x.motionId === motion.id && x.vote === vote)
+      .sort((a, b) => (a.purchaseAgreement?.amountSpent || 0) > (b.purchaseAgreement?.amountSpent || 0) ? -1 : 1);
+  }
+
   advancePhase = () => {
     const currentPhase = this.props.phase;
     if (currentPhase?.id === 'table' && !this.props.motionsTabled.length) {
@@ -94,6 +115,15 @@ class Game extends React.Component {
               const amountSpent = vote.purchaseAgreement.amountSpent;
               this.props.dispatch(updateActors([{id: purchaser, changes: {capital: (this.props.actors.find(x => x.id === purchaser)?.state?.capital||0) - amountSpent}}]));
               this.props.dispatch(updateActors([{id: vote.actorId, changes: {capital: (this.props.actors.find(x => x.id === vote.actorId)?.state?.capital||0) + amountSpent}}]));
+            }
+            if (vote.actorId === this.props.player.id) {
+              const offer = this.getOffers(motion, vote.vote)?.[0];
+              if (!!offer?.purchaseAgreement) {
+                const amountSpent = offer.purchaseAgreement.amountSpent || 0;
+                const purchaser = offer.purchaseAgreement.purchasedBy || '';
+                this.props.dispatch(updateActors([{id: purchaser, changes: {capital: (this.props.actors.find(x => x.id === purchaser)?.state?.capital||0) - amountSpent}}]));
+                this.props.dispatch(updateActors([{id: vote.actorId, changes: {capital: (this.props.actors.find(x => x.id === vote.actorId)?.state?.capital||0) + amountSpent}}]));
+              }
             }
           });
           const yea = votes.yea.total;
@@ -145,12 +175,7 @@ class Game extends React.Component {
       .filter(motion => !!motion.tabledBy)
 
     tabledMotions.forEach(motion => {
-      const actors = this.props?.actors
-        .map(actor => {
-          const approval = getActorApproval(actor, motion);
-          const costToInfluence = getCostToInfluence(actor, approval);
-          return {...actor, approval: approval, costToInfluence: costToInfluence, position: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain'}
-        });
+      const actors = getActorsWithApproval(this.props?.actors, motion);
 
       actors.filter(x => x.id !== this.props.player.id).forEach(actor => {
         changes.push({
@@ -160,8 +185,13 @@ class Game extends React.Component {
           reason: 'freely'
         });
       })
+    });
+    this.props.dispatch(changeVotes(changes));
 
-      // Now they make offers!
+    // Now they make offers!
+    tabledMotions.forEach(motion => {
+      const actors = getActorsWithApproval(this.props?.actors, motion);
+
       actors.filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3).reverse().forEach(actor => {
         const purchaseOptions = actors
           .filter(x => x.id !== actor.id && (!!this.props.motionVotes[motion.id, actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
@@ -223,7 +253,6 @@ class Game extends React.Component {
           });
         });
       });
-    this.props.dispatch(changeVotes(changes));
 
     console.log('Offers have been extended', offers);
     this.props.dispatch(setOffers(offers));
@@ -257,58 +286,12 @@ class Game extends React.Component {
         });
     });
 
-    console.log(changes);
     this.props.dispatch(changeVotes(changes));
   }
 
-  table = (motionId: string, actorId: string) => {
-    const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
-    const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
-    const actor = this.props.actors.find((x: ActorWithState) => x.id === actorId);
-    if (!actor || !motion) {
-      return;
-    }
-    if (!tabled && actor.state.capital >= motion.costToTable) {
-      this.props.dispatch(tableMotion(motionId, actor.id));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}));
-      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
-    } else if (!!tabled && tabled.tabledBy === actor.id) {
-      this.props.dispatch(rescindMotion(motionId));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}));
-      this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
-    }
-  };
-
-  vote = (motionId: string, actorId: string, vote: string | null = null) => {
-    const actor = this.props.actors.find((x: any) => x.id === actorId);
-    const currentVote = this.getVote(motionId, actorId);
-    if (!actor) {
-      return;
-    }
-    this.props.dispatch(changeVote({
-      ...currentVote,
-      actorId: actor.id,
-      motionId: motionId,
-      vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
-      reason: 'freely'
-    }));
-    console.log('voting', motionId);
-  };
-
-  inspectMotion = (motionId: string) => {
-    this.inspectedMotion = (this.inspectedMotion === motionId) ? '' : motionId;
-    console.log('now inspecting', this.inspectedMotion);
-  }
-
-  makeOffer = (actorId: string, motionId: string, vote: string, amountSpent: number) => {
-    this.props.dispatch(changeVote({actorId: actorId, motionId: motionId, vote: vote, reason: 'bought', purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}}));
-  }
-
-  phaseFunc: {[id: string]: (motionid: string, actorId: string) => void} = {table: this.table, vote: this.vote};
-
   render = () => (
     <div className="p-5 content">
-      <div className={"fade--full" + (!!this.props.motionVotes[this.inspectedMotion] && ' active')}></div>
+      <div className={"fade--full" + (!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) && ' active')}></div>
       <div className="mb-4">
         <h2>Profile</h2>
         <SettlementProfile settlement={this.props.currentSettlement} policies={this.props.policies}></SettlementProfile>
@@ -326,128 +309,11 @@ class Game extends React.Component {
           <h3 className="mb-3">
             {this.props.phase?.id === 'table' ? 'Opportunities' : 'Measures'}
           </h3>
-          {this.props.availableMotions
-              .map(motion => ({...motion, onTable: getById(this.props.motionsTabled, motion.id)}))
-              .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
-              .map(motion => (
-            <div key={motion.id}
-                className={"text-left motion__wrapper btn-group-vertical mb-3 w-100 bg-light rounded" + (this.inspectedMotion === motion.id && ' motion__wrapper--active')}>
-              <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3"
-                  onClick={() => this.inspectMotion(motion.id)}>
-                <MotionInfo motion={motion}
-                    mode={this.props.phase?.id}
-                    tabledBy={getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
-                  {this.props.phase?.id !== 'table' ?
-                    <span>
-                      Yea: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0})
-                      &nbsp;
-                      Nay: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0})
-                    </span>
-                  :
-                    null
-                  }
-                </MotionInfo>
-              </button>
-              {this.props.phase?.id !== 'table' ? (
-                <div className="btn-group w-100">
-                  <button style={{borderTopLeftRadius: 0}}
-                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'yea' ? 'outline-' : ''}success`}
-                      onClick={() => this.vote(motion.id, this.props.player.id, 'yea')}>
-                    Yea
-                    {!!this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'yea')?.length && (
-                      <span>
-                        &nbsp;
-                        <StatIcon stat='capital' value={this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'yea')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
-                      </span>
-                    )}
-                  </button>
-                  <button style={{borderTopRightRadius: 0}}
-                      className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'nay' ? 'outline-' : ''}danger`}
-                      onClick={() => this.vote(motion.id, this.props.player.id, 'nay')}>
-                    Nay
-                    &nbsp;
-                    {!!this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'nay')?.length && (
-                      <span>
-                        &nbsp;
-                        <StatIcon stat='capital' value={this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'nay')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
-                      </span>
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <div className="w-100">
-                  <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
-                      disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id)}
-                      className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
-                      onClick={() => this.table(motion.id, this.props.player.id)}>
-                    {!!motion.onTable ? 'Rescind' : 'Draft'}
-                    &nbsp;&nbsp;&nbsp;
-                    <StatIcon stat='capital' value={motion.costToTable}></StatIcon>
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+          <SettlementMotions></SettlementMotions>
         </div>
         <div className="col-6 border-left">
           <h3 className="mb-3">Circle</h3>
-          {this.props.actors.map((x, i) => (
-            <div className="mb-3 btn-group-vertical bg-white w-100 rounded actor__wrapper" key={x.id}>
-              <button className="btn btn-outline-dark w-100 text-left">
-                <div className="d-flex justify-content-between">
-                  <div>
-                    <b>{x.name}</b>
-                    {x.offices.length > 0 && (x.offices.map(office => ', ' + office.name.basic))}
-                    {x.id === this.props.player.id && (<span>&nbsp;(You)</span>)}
-                  </div>
-                  <div className="d-flex">
-                    <div style={{minWidth: '60px'}}><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
-                    <div><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
-                  </div>
-                </div>
-                {!!this.props.motionVotes[this.inspectedMotion] ? (
-                  <div>
-                    <div>
-                      Voted <b style={{color: getAssociatedVoteColor(this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain')}}>{this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain'}</b>
-                    </div>
-                    {!!this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement && (
-                      <div>
-                        on request of {getById(this.props.actors, this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    &nbsp;
-                  </div>
-                )}
-                <div className="d-flex">
-                  {x.state.positions.map(position => (
-                    <div key={position.stat} style={{opacity: position.passion / 100.0}}>
-                      <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
-                    </div>
-                  ))}
-                </div>
-              </button>
-              {(x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.inspectedMotion)) ? (() => {
-                // @ts-ignore;
-                const approval = getActorApproval(x, this.props.availableMotions.find(y => y.id === this.inspectedMotion));
-                const costToInfluence = getCostToInfluence(x, approval);
-                const currentOffer = this.props.currentVoteOffers[x.id]?.find(x => x.motionId === this.inspectedMotion)?.purchaseAgreement;
-                return (
-                  <div className="btn-group w-100">
-                    {[{key: 'yea', color: 'success'}, {key: 'abstain', color: 'secondary'}, {key: 'nay', color: 'danger'}].map(key => (
-                      <button key={key.key} disabled={this.props.player.state.capital < Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]) || this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id}
-                          className={`btn btn-outline-${key.color} w-100`}
-                          onClick={() => this.makeOffer(x.id, this.inspectedMotion, key.key, Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]))}>
-                        {key.key} <StatIcon stat='capital' value={Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key])}></StatIcon>
-                      </button>
-                    ))}
-                  </div>
-                );
-              })() : null}
-            </div>
-          ))}
+          <SettlementCircle></SettlementCircle>
         </div>
       </div>
     </div>
@@ -466,10 +332,9 @@ const mapStateToProps = (state: State) => {
   });
   Object.keys(profile).forEach(x => profile[x] = Math.max(0, profile[x]));
 
-  const actors = state.actors.map(x => ({...returnActorWithState(x, state.saveData.actorState[x.id])})).map(actor => {
-    const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
-    return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
-  }).sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
+  const actors: ActorWithStateAndOffices[] = state.actors
+    .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
+    .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
 
   return {
     phase: state.phases[state.saveData.currentPhase || 0],
@@ -482,6 +347,7 @@ const mapStateToProps = (state: State) => {
     currentVoteOffers: state.saveData.currentVoteOffers,
     currentPhaseCountdown: state.saveData.currentPhaseCountdown,
     currentPhase: state.saveData.currentPhase,
+    inspectedMotion: state.saveData.inspectedMotion,
     policies: state.policies,
     screen: state.screen,
     availableMotions: state.saveData.availableMotions

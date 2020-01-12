@@ -1,3 +1,5 @@
+import { PoliticalOffice } from "./politicalOffice.model";
+import { SettlementState, SettlementWithState } from "./settlement.model";
 
 export interface ActorBaseData {
   id: string;
@@ -11,12 +13,22 @@ export interface ActorState {
 export interface ActorWithState extends ActorBaseData {
   state: ActorState;
 }
+export interface ActorWithStateAndOffices extends ActorWithState {
+  voteWeight: number;
+  offices: PoliticalOffice[];
+}
 
 export const returnActorWithState = (baseData: ActorBaseData, state: ActorState | null | undefined): ActorWithState => {
   return {
     ...baseData,
     state: { capital: 0, positions: [], ...state }
   }
+}
+
+export const returnActorWithStateAndOffices = (baseData: ActorBaseData, state: ActorState | null | undefined, settlement: SettlementWithState): ActorWithStateAndOffices => {
+  const actor = returnActorWithState(baseData, state);
+  const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
+  return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
 }
 
 export interface PoliticalPosition {

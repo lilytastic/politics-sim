@@ -1,9 +1,7 @@
-import { changeVote } from "../store/actionCreators";
-import { useDispatch } from "react-redux";
-import { Vote } from "../store/reducers";
 import { Motion } from "../models/motion.model";
-import { ActorWithState } from "../models/actor.model";
+import { ActorWithState, ActorWithStateAndOffices } from "../models/actor.model";
 import { stats } from "../models/stats.model";
+import { SettlementState } from "../models/settlement.model";
 
 export function getAssociatedVoteColor(vote: string) {
   switch (vote) {
@@ -40,3 +38,10 @@ export const getCostToInfluence = (actor: any, approval: number) => {
   return costToInfluence;
 }
 
+export const getActorsWithApproval = (actors: ActorWithStateAndOffices[], motion: Motion) => {
+  return actors.map(actor => {
+    const approval = getActorApproval(actor, motion);
+    const costToInfluence = getCostToInfluence(actor, approval);
+    return {...actor, approval: approval, costToInfluence: costToInfluence, position: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain'}
+  });
+}

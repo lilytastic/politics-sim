@@ -21,7 +21,7 @@ export const OFFICE_ELDER: PoliticalOffice = {
 
 export const OFFICE_CHIEFTAIN: PoliticalOffice = {
   name: { basic: 'Chieftain' },
-  voteWeight: 3,
+  voteWeight: 4,
   softCapitalPerCycle: 500,
   softCapitalCap: 2500
 }
