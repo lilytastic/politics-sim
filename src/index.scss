@@ -17,6 +17,32 @@ code {
   margin: 0 auto;
 }
 
+.motion__wrapper--active {
+  position: relative;
+  z-index: 9;
+}
+
+.fade--full {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  background-color: rgba(0,0,0,0.2);
+  transition: opacity .85s ease-in-out 0;
+  z-index: 4;
+  &.active {
+    opacity: 1;
+    transition: opacity .85s ease-in-out .5s;
+  }
+}
+
+.actor__wrapper {
+  position: relative;
+  z-index: 5;
+}
+
 ul {
   padding: 0;
   list-style-type: none;

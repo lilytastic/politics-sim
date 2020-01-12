@@ -15,6 +15,7 @@ import { PolicyState, PolicyBaseData } from '../models/policy.model';
 class Game extends React.Component {
   // @ts-ignore;
   props: Props;
+  inspectedMotion = '';
 
   constructor(props: any) {
     super(props);
@@ -147,6 +148,15 @@ class Game extends React.Component {
     });
   }
 
+  getCostToInfluence = (actor: any, approval: number) => {
+    const costToInfluence: {[id: string]: number} = {
+      yea: Math.max(100, (1 + Math.max(0, -approval)) * 100 * actor.voteWeight),
+      abstain: Math.max(100, ((1 + Math.max(0, Math.abs(approval))) * 100 * actor.voteWeight) / 2),
+      nay: Math.max(100, (1 + Math.max(0, approval)) * 100 * actor.voteWeight)
+    }
+    return costToInfluence;
+  }
+
   handleVote = () => {
     let changes: Vote[] = [];
     const offers: {[actorId: string]: Vote[]} = {}
@@ -159,11 +169,7 @@ class Game extends React.Component {
       const actors = this.props?.actors
         .map(actor => {
           const approval = this.getActorApproval(actor, motion);
-          const costToInfluence: {[id: string]: number} = {
-            yea: Math.max(100, (1 + Math.max(0, approval)) * 100 * actor.voteWeight),
-            abstain: Math.max(100, (1 + Math.max(0, Math.abs(approval))) * 100 * actor.voteWeight),
-            nay: Math.max(100, (1 + Math.min(0, approval)) * 100 * actor.voteWeight)
-          }
+          const costToInfluence = this.getCostToInfluence(actor, approval);
           return {...actor, approval: approval, costToInfluence: costToInfluence, position: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain'}
         });
 
@@ -281,6 +287,17 @@ class Game extends React.Component {
     this.props.dispatch(changeVotes(changes));
   }
 
+  getAssociatedVoteColor(vote: string) {
+    switch (vote) {
+      case 'yea':
+        return 'green';
+      case 'nay':
+        return 'crimson';
+      default:
+        return 'grey';
+    }
+  }
+
   table = (motionId: string, actorId: string) => {
     const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
@@ -319,10 +336,16 @@ class Game extends React.Component {
     return arr.find((x: any) => x.id === id);
   }
 
+  inspectMotion = (motionId: string) => {
+    this.inspectedMotion = (this.inspectedMotion === motionId) ? '' : motionId;
+    console.log('now inspecting', this.inspectedMotion);
+  }
+
   phaseFunc: {[id: string]: (motionid: string, actorId: string) => void} = {table: this.table, vote: this.vote};
 
   render = () => (
     <div className="p-5 content">
+      <div className={"fade--full" + (!!this.props.motionVotes[this.inspectedMotion] && ' active')}></div>
       <div className="mb-4">
         <h2>Profile</h2>
         <div>
@@ -359,7 +382,7 @@ class Game extends React.Component {
         </div>
       </div>
       <div className="row">
-        <div className="col-7">
+        <div className="col-6">
           <h3 className="mb-3">
             {this.props.phase?.id === 'table' ? 'Opportunities' : 'Measures'}
           </h3>
@@ -368,8 +391,9 @@ class Game extends React.Component {
               .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
               .map(motion => (
             <div key={motion.id}
-                className={"text-left btn-group-vertical mb-3 w-100 bg-light rounded"}>
-              <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3">
+                className={"text-left motion__wrapper btn-group-vertical mb-3 w-100 bg-light rounded" + (this.inspectedMotion === motion.id && ' motion__wrapper--active')}>
+              <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3"
+                  onClick={() => this.inspectMotion(motion.id)}>
                 <MotionInfo motion={motion}
                     mode={this.props.phase?.id}
                     tabledBy={this.getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
@@ -412,28 +436,58 @@ class Game extends React.Component {
             </div>
           ))}
         </div>
-        <div className="col-5 border-left">
+        <div className="col-6 border-left">
           <h3 className="mb-3">Congress</h3>
           {this.props.actors.map((x, i) => (
-            <div className="mb-3" key={x.id}>
-              <div className="d-flex justify-content-between">
-                <div>
-                  <b>{x.name}</b>
-                  {x.offices.length > 0 && (x.offices.map(office => ', ' + office.name.basic))}
-                  {x.id === this.props.player.id && (<span>&nbsp;(You)</span>)}
-                </div>
-                <div className="d-flex">
-                  <div style={{minWidth: '60px'}}><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
-                  <div><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
-                </div>
-              </div>
-              <div className="d-flex">
-                {x.state.positions.map(position => (
-                  <div key={position.stat} style={{opacity: position.passion / 100.0}}>
-                    <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
+            <div className="mb-3 btn-group-vertical bg-white w-100 rounded actor__wrapper" key={x.id}>
+              <button className="btn btn-outline-dark w-100 text-left">
+                <div className="d-flex justify-content-between">
+                  <div>
+                    <b>{x.name}</b>
+                    {x.offices.length > 0 && (x.offices.map(office => ', ' + office.name.basic))}
+                    {x.id === this.props.player.id && (<span>&nbsp;(You)</span>)}
                   </div>
-                ))}
-              </div>
+                  <div className="d-flex">
+                    <div style={{minWidth: '60px'}}><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
+                    <div><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
+                  </div>
+                </div>
+                {!!this.props.motionVotes[this.inspectedMotion] ? (
+                  <div>
+                    <div>
+                      Voted <b style={{color: this.getAssociatedVoteColor(this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain')}}>{this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain'}</b>
+                    </div>
+                    {!!this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement && (
+                      <div>
+                        on request of {this.getById(this.props.actors, this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    &nbsp;
+                  </div>
+                )}
+                <div className="d-flex">
+                  {x.state.positions.map(position => (
+                    <div key={position.stat} style={{opacity: position.passion / 100.0}}>
+                      <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
+                    </div>
+                  ))}
+                </div>
+              </button>
+              {!!this.props.availableMotions.find(y => y.id === this.inspectedMotion) ? (() => {
+                // @ts-ignore;
+                const approval = this.getActorApproval(x, this.props.availableMotions.find(y => y.id === this.inspectedMotion));
+                const costToInfluence = this.getCostToInfluence(x, approval);
+                return (
+                  <div className="btn-group w-100">
+                    <button disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id} className="btn btn-outline-success">Yea <StatIcon stat='capital' value={costToInfluence.yea}></StatIcon></button>
+                    <button disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id} className="btn btn-outline-secondary">Abstain <StatIcon stat='capital' value={costToInfluence.abstain}></StatIcon></button>
+                    <button disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id} className="btn btn-outline-danger">Nay <StatIcon stat='capital' value={costToInfluence.nay}></StatIcon></button>
+                  </div>
+                );
+              })() : null}
             </div>
           ))}
         </div>
