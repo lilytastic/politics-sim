@@ -199,7 +199,7 @@ class Game extends React.Component {
                   &nbsp;
                   <div className="d-inline-block font-weight-bold" style={{minWidth: '100px'}}>{stance?.label}</div>
                   &nbsp;
-                  {stance?.effects.map(x => (<span style={{minWidth: '60px'}} className="d-inline-block"><StatIcon key={x.stat} stat={x.stat} value={x.amount}></StatIcon></span>))}
+                  {stance?.effects.map(x => (<span key={x.stat} style={{minWidth: '60px'}} className="d-inline-block"><StatIcon stat={x.stat} value={x.amount}></StatIcon></span>))}
                 </li>
               );
             })}
@@ -231,9 +231,9 @@ class Game extends React.Component {
                     tabledBy={this.getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
                   {this.props.phase?.id !== 'table' ?
                     <span>
-                      Yea: {this.props.actors?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0}
+                      Yea: {this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? curr.voteWeight : 0), 0) || 0}
                       &nbsp;
-                      Nay: {this.props.actors?.reduce((acc: any, curr: any) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0}
+                      Nay: {this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? curr.voteWeight : 0), 0) || 0}
                     </span>
                   :
                     null
@@ -271,19 +271,25 @@ class Game extends React.Component {
         <div className="col-5 border-left">
           <h3 className="mb-3">Congress</h3>
           {this.props.actors.map((x, i) => (
-            <div className="mb-3" key={i}>
-              <div>
-                {x.offices.length > 0 && (x.offices[0].name.basic + ' ')}
-                <b>{x.name}</b>
-                {x.id === this.props.player.id && (<span>&nbsp;(You)</span>)}
+            <div className="mb-3" key={x.id}>
+              <div className="d-flex justify-content-between">
+                <div>
+                  <b>{x.name}</b>
+                  {x.offices.length > 0 && (x.offices.map(office => ', ' + office.name.basic))}
+                  {x.id === this.props.player.id && (<span>&nbsp;(You)</span>)}
+                </div>
+                <div className="d-flex">
+                  <div style={{minWidth: '60px'}}><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
+                  <div><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
+                </div>
               </div>
-              <div><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
-              <div>{x.voteWeight}</div>
-              {x.state.positions.map(position => (
-                <span key={position.stat} style={{opacity: position.passion / 100.0}}>
-                  <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
-                </span>
-              ))}
+              <div className="d-flex">
+                {x.state.positions.map(position => (
+                  <div key={position.stat} style={{opacity: position.passion / 100.0}}>
+                    <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

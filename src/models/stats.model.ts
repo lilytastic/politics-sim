@@ -70,5 +70,10 @@ export const stats: {[id: string]: Stat} = {
     opposed: 'vigilance',
     description: `Our enemies are gathering, inside and out.`,
     icon: 'crosshairs'
+  },
+  'votes': {
+    label: 'Votes',
+    color: 'royalblue',
+    icon: 'vote-yea'
   }
 }
