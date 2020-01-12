@@ -32,6 +32,7 @@ code {
   background-color: rgba(0,0,0,0.2);
   transition: opacity .85s ease-in-out 0;
   z-index: 4;
+  pointer-events: none;
   &.active {
     opacity: 1;
     transition: opacity .85s ease-in-out .5s;

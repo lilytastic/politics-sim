@@ -298,6 +298,10 @@ class Game extends React.Component {
     }
   }
 
+  makeOffer = (actorId: string, motionId: string, vote: string, amountSpent: number) => {
+    this.props.dispatch(changeVote({actorId: actorId, motionId: motionId, vote: vote, reason: 'bought', purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}}));
+  }
+
   table = (motionId: string, actorId: string) => {
     const motion = this.props.availableMotions.find((x: any) => x.id === motionId);
     const tabled = this.props.motionsTabled.find((x: any) => x.id === motionId);
@@ -476,7 +480,7 @@ class Game extends React.Component {
                   ))}
                 </div>
               </button>
-              {!!this.props.availableMotions.find(y => y.id === this.inspectedMotion) ? (() => {
+              {(x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.inspectedMotion)) ? (() => {
                 // @ts-ignore;
                 const approval = this.getActorApproval(x, this.props.availableMotions.find(y => y.id === this.inspectedMotion));
                 const costToInfluence = this.getCostToInfluence(x, approval);
@@ -485,8 +489,9 @@ class Game extends React.Component {
                   <div className="btn-group w-100">
                     {[{key: 'yea', color: 'success'}, {key: 'abstain', color: 'secondary'}, {key: 'nay', color: 'danger'}].map(key => (
                       <button key={key.key} disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id}
-                          className={`btn btn-outline-${key.color} w-100`}>
-                        {key.key} <StatIcon stat='capital' value={costToInfluence[key.key]}></StatIcon>
+                          className={`btn btn-outline-${key.color} w-100`}
+                          onClick={() => this.makeOffer(x.id, this.inspectedMotion, key.key, Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]))}>
+                        {key.key} <StatIcon stat='capital' value={Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key])}></StatIcon>
                       </button>
                     ))}
                   </div>
