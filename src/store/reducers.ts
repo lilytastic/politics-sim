@@ -52,6 +52,8 @@ interface PoliticalStructure {
   offices: {[id: string]: PoliticalOffice}
 }
 
+export interface Vote {actorId: string, motionId: string, vote: string; reason: string}
+
 
 const OFFICE_CHIEF: PoliticalOffice = {
   name: {basic: 'Chief', feminine: 'Chieftess'},

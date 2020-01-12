@@ -3,7 +3,7 @@ import { connect, ConnectedProps } from 'react-redux'
 import { interval, timer } from 'rxjs';
 import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState } from '../store/actionCreators';
 import { ActorBaseData, ActorState, actors, ActorWithState, returnActorWithState } from '../models/actor.model';
-import { State } from '../store/reducers';
+import { State, Vote } from '../store/reducers';
 import { MotionInfo } from '../components/MotionInfo';
 import { StatIcon } from '../components/StatIcon';
 import { Motion } from '../models/motion.model';
@@ -118,24 +118,101 @@ class Game extends React.Component {
     return approval;
   }
 
+  tallyVotes = (votes: Vote[]) => {
+    const positions = ['yea', 'abstain', 'nay'];
+    const _votes: {[id: string]: {voters: number, total: number}} = {};
+    positions.forEach(key => {
+      _votes[key] = {
+        voters: votes.reduce((acc, curr) => acc + (curr.vote === key ? 1 : 0), 0),
+        total: votes.reduce((acc, curr) => acc + (curr.vote === key ? (this.props.actors.find(x => x.id === curr.actorId)?.voteWeight || 1) : 0), 0)
+      }
+    });
+    return _votes;
+  }
+
   actorsVote = () => {
-    let changes: any[] = [];
-    this.props?.actors
-      .filter((x: ActorWithState) => x.id !== this.props.player.id)
-      .forEach((actor: ActorWithState) => {
-        this.props?.availableMotions
-          .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
-          .forEach((motion: Motion) => {
-            let approval = this.getActorApproval(actor, motion);
-            changes.push({
-              actorId: actor.id,
-              motionId: motion.id,
-              vote: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain',
-              reason: 'freely'
-            });
+    let changes: Vote[] = [];
+    const actorChanges: {id: string, changes: Partial<ActorState>}[] = [];
+
+    this.props?.availableMotions
+      .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
+      .forEach((motion: Motion) => {
+        const actors = this.props?.actors.map(actor => {
+          const approval = this.getActorApproval(actor, motion);
+          const costToInfluence: {[id: string]: number} = {
+            yea: Math.max(100, (1 + Math.max(0, approval)) * 100 * actor.voteWeight),
+            abstain: Math.max(100, (1 + Math.max(0, Math.abs(approval))) * 100 * actor.voteWeight),
+            nay: Math.max(100, (1 + Math.min(0, approval)) * 100 * actor.voteWeight)
+          }
+          return {...actor, approval: approval, costToInfluence: costToInfluence, position: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain'}
+        });
+        actors.forEach(actor => {
+          changes.push({
+            actorId: actor.id,
+            motionId: motion.id,
+            vote: actor.position,
+            reason: 'freely'
           });
+        })
+
+        console.log('default positions tallied:', this.tallyVotes(changes), changes);
+
+        actors.forEach(actor => {
+          const voteOptions = actors
+            .filter(x => x.id !== actor.id)
+            .sort((a, b) => a.costToInfluence[actor.position] > b.costToInfluence[actor.position] ? 1 : -1);
+
+          if (Math.abs(actor.approval) > 3) {
+            const votes = this.tallyVotes(changes);
+            const votesNeeded = Math.max(0,
+              actor.position === 'yea' ? votes.nay.total - votes.yea.total :
+              actor.position === 'nay' ? votes.yea.total - votes.nay.total :
+              0
+            );
+            let votesBought = 0;
+            console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes`, voteOptions);
+            // Actor cares enough to buy votes from other actors.
+            let capital = actor.state.capital;
+            voteOptions
+              // .filter(x => x.costToInfluence < Math.abs(actor.approval) / 100)
+              .map(_actor => ({..._actor, existingVoteIndex: changes.findIndex(x => x.actorId === _actor.id), existingVote: changes.find(x => x.actorId === _actor.id)}))
+              .forEach(_actor => {
+                if (votesBought >= votesNeeded) {
+                  return;
+                }
+                const costToInfluence = _actor.costToInfluence;
+                const boughtVote = {actorId: _actor.id, motionId: motion.id, reason: 'bought', vote: actor.position};
+                const amountSpent = costToInfluence[actor.position];
+                if (capital >= amountSpent) {
+                  let bought = false;
+                  if (!!_actor.existingVote && _actor.existingVote.reason !== 'bought') {
+                    // Can't buy from someone who's already been bought
+                    bought = true;
+                  } else if (!_actor.existingVote) {
+                    bought = true;
+                  }
+
+                  if (bought) {
+                    if (_actor.id === this.props.player.id) {
+                      // Alert player
+                      console.log(`${actor.name} wants to buy ${boughtVote.vote} vote from the player for ${amountSpent}`);
+                    } else {
+                      _actor.existingVoteIndex !== -1 ? changes[_actor.existingVoteIndex] = boughtVote : changes.push(boughtVote);
+                      votesBought += _actor.voteWeight;
+                      capital -= amountSpent;
+                      actorChanges.push({id: actor.id, changes: {capital: actor.state.capital - amountSpent}});
+                      actorChanges.push({id: _actor.id, changes: {capital: _actor.state.capital + amountSpent}});
+                      console.log(`${actor.name} bought ${boughtVote.vote} vote from ${_actor.name} for ${amountSpent}`);
+                    }
+                  }
+                }
+              });
+          }
+        });
       });
+    console.log(changes, actorChanges);
     this.props.dispatch(changeVotes(changes));
+    this.props.dispatch(updateActors(actorChanges));
   }
 
   table = (motionId: string, actorId: string) => {
@@ -199,7 +276,7 @@ class Game extends React.Component {
                   &nbsp;
                   <div className="d-inline-block font-weight-bold" style={{minWidth: '100px'}}>{stance?.label}</div>
                   &nbsp;
-                  {stance?.effects.map(x => (<span key={x.stat} style={{minWidth: '60px'}} className="d-inline-block"><StatIcon stat={x.stat} value={x.amount}></StatIcon></span>))}
+                  {stance?.effects.map(x => (<span key={x.stat} style={{minWidth: '60px'}} className="d-inline-block"><StatIcon stat={x.stat} mode='modifier' value={x.amount}></StatIcon></span>))}
                 </li>
               );
             })}
@@ -231,9 +308,9 @@ class Game extends React.Component {
                     tabledBy={this.getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
                   {this.props.phase?.id !== 'table' ?
                     <span>
-                      Yea: {this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? curr.voteWeight : 0), 0) || 0}
+                      Yea: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0})
                       &nbsp;
-                      Nay: {this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? curr.voteWeight : 0), 0) || 0}
+                      Nay: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0})
                     </span>
                   :
                     null
