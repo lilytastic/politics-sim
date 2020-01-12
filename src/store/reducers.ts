@@ -131,7 +131,7 @@ export interface SaveData {
   actorState: {[id: string]: ActorState};
   availableMotions: Motion[];
   motionsTabled: {id: string; tabledBy: string}[];
-  motionVotes: {[id: string]: {[id: string]: {vote: string, reason: string}}};
+  motionVotes: {[id: string]: {[id: string]: {vote: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, reason: string}}};
   currentPhase: number;
   currentPhaseCountdown: number;
 }
@@ -231,7 +231,7 @@ export function rootReducer(state = initialState, action: any): State {
       const change = action.change;
       const _motionVotes = {...state.saveData.motionVotes};
       _motionVotes[change.motionId] = _motionVotes[change.motionId] || {};
-      _motionVotes[change.motionId][change.actorId] = {vote: change.vote, reason: change.reason};
+      _motionVotes[change.motionId][change.actorId] = {purchaseAgreement: change.purchaseAgreement, vote: change.vote, reason: change.reason};
       return {
         ...state,
         saveData: {
@@ -240,11 +240,11 @@ export function rootReducer(state = initialState, action: any): State {
         }
       };
     case 'CHANGE_VOTES':
-      const changes: {actorId: string, motionId: string, vote: string, reason: string}[] = action.changes;
+      const changes: Vote[] = action.changes;
       const motionVotes = {...state.saveData.motionVotes};
       changes.forEach(change => {
         motionVotes[change.motionId] = motionVotes[change.motionId] || {};
-        motionVotes[change.motionId][change.actorId] = {vote: change.vote, reason: change.reason};
+        motionVotes[change.motionId][change.actorId] = {purchaseAgreement: change.purchaseAgreement, vote: change.vote, reason: change.reason};
       });
       return {
         ...state,

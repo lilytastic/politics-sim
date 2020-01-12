@@ -1,5 +1,6 @@
 import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
+import { Vote } from "./reducers";
 
 export const changeScreen = (screen: string) => ({
   type: 'CHANGE_SCREEN',
@@ -33,11 +34,11 @@ export const rescindMotion = (motion: string) => ({
   motion
 });
 
-export const changeVote = (change: {actorId: string, motionId: string, vote: string, reason: string}) => ({
+export const changeVote = (change: Vote) => ({
   type: 'CHANGE_VOTE',
   change
 })
-export const changeVotes = (changes: {actorId: string, motionId: string, vote: string, reason: string}[]) => ({
+export const changeVotes = (changes: Vote[]) => ({
   type: 'CHANGE_VOTES',
   changes
 })

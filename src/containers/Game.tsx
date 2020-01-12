@@ -76,13 +76,12 @@ class Game extends React.Component {
       this.returnToTablePhase();
       return;
     }
-    const actorChanges = [];
     if (currentPhase?.id === 'vote') {
       this.props.availableMotions
         .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
         .forEach((motion: Motion) => {
           const ugh: Vote[] = this.props.actors?.reduce((acc: Vote[], curr) => ([...acc, this.getVote(motion.id, curr.id)]), []);
-          console.log('all votes', ugh);
+          console.log(`All votes for ${motion.name}`, ugh, this.props.motionVotes);
           const votes = this.tallyVotes(ugh);
           console.log(`Final tally for ${motion.name}`, votes);
           ugh.forEach(vote => {
@@ -101,7 +100,6 @@ class Game extends React.Component {
         });
       this.returnToTablePhase();
     }
-
     this.props.dispatch(changeCurrentPhase((this.props.currentPhase + 1) % this.props.phases.length));
 
     const newPhase = this.props.phase;
@@ -172,7 +170,7 @@ class Game extends React.Component {
 
       console.log('default positions tallied:', this.tallyVotes(changes), changes);
 
-      actors.forEach(actor => {
+      actors.reverse().forEach(actor => {
         const voteOptions = actors
           .filter(x => x.id !== actor.id)
           .shuffle()
@@ -180,12 +178,11 @@ class Game extends React.Component {
 
         if (Math.abs(actor.approval) > 3) {
           const votes = this.tallyVotes(changes);
-          const votesNeeded = Math.max(0,
+          const votesNeeded = 
             actor.position === 'yea' ? votes.nay.total - votes.yea.total :
             actor.position === 'nay' ? votes.yea.total - votes.nay.total :
-            0
-          );
-          const votesToBuy = votesNeeded + Math.abs(actor.approval / 3);
+            0;
+          const votesToBuy = votesNeeded + 1 + Math.abs(actor.approval / 3);
           let votesBought = 0;
           console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes, wants ${votesToBuy}`, voteOptions);
           // Actor cares enough to buy votes from other actors.
@@ -241,14 +238,15 @@ class Game extends React.Component {
 
     tabledMotions.forEach(motion => {
       this.props.actors
+        .shuffle()
         .filter(x => this.props.player.id !== x.id && motion.tabledBy !== x.id)
         .forEach(actor => {
           let existingVoteIndex = changes.findIndex(x => x.actorId === actor.id && x.motionId === motion.id);
           if (!!changes[existingVoteIndex].purchaseAgreement) {
             return;
           }
-          const personalOffers = (offers[actor.id]||[]).sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1) || [];
-          personalOffers.forEach(offer => {
+          const personalOffers = (offers[actor.id]||[]).shuffle().sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1) || [];
+          personalOffers.filter(offer => offer.motionId === motion.id).forEach(offer => {
             existingVoteIndex = changes.findIndex(x => x.actorId === actor.id && x.motionId === motion.id);
             const purchaser = this.props.actors.find(x => x.id === offer.purchaseAgreement?.purchasedBy);
             const amountSpent = offer.purchaseAgreement?.amountSpent || 0;
@@ -289,6 +287,7 @@ class Game extends React.Component {
       return;
     }
     this.props.dispatch(changeVote({
+      ...currentVote,
       actorId: actor.id,
       motionId: motionId,
       vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
