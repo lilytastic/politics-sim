@@ -151,7 +151,7 @@ class Game extends React.Component {
   getCostToInfluence = (actor: any, approval: number) => {
     const costToInfluence: {[id: string]: number} = {
       yea: Math.max(100, (1 + Math.max(0, -approval)) * 100 * actor.voteWeight),
-      abstain: Math.max(100, ((1 + Math.max(0, Math.abs(approval))) * 100 * actor.voteWeight) / 2),
+      abstain: Math.max(100, (1 + Math.max(0, Math.abs(approval) / 2)) * 100 * actor.voteWeight),
       nay: Math.max(100, (1 + Math.max(0, approval)) * 100 * actor.voteWeight)
     }
     return costToInfluence;
@@ -480,11 +480,15 @@ class Game extends React.Component {
                 // @ts-ignore;
                 const approval = this.getActorApproval(x, this.props.availableMotions.find(y => y.id === this.inspectedMotion));
                 const costToInfluence = this.getCostToInfluence(x, approval);
+                const currentOffer = this.props.currentVoteOffers[x.id]?.find(x => x.motionId === this.inspectedMotion)?.purchaseAgreement;
                 return (
                   <div className="btn-group w-100">
-                    <button disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id} className="btn btn-outline-success">Yea <StatIcon stat='capital' value={costToInfluence.yea}></StatIcon></button>
-                    <button disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id} className="btn btn-outline-secondary">Abstain <StatIcon stat='capital' value={costToInfluence.abstain}></StatIcon></button>
-                    <button disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id} className="btn btn-outline-danger">Nay <StatIcon stat='capital' value={costToInfluence.nay}></StatIcon></button>
+                    {[{key: 'yea', color: 'success'}, {key: 'abstain', color: 'secondary'}, {key: 'nay', color: 'danger'}].map(key => (
+                      <button key={key.key} disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id}
+                          className={`btn btn-outline-${key.color} w-100`}>
+                        {key.key} <StatIcon stat='capital' value={costToInfluence[key.key]}></StatIcon>
+                      </button>
+                    ))}
                   </div>
                 );
               })() : null}
