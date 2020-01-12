@@ -9,6 +9,9 @@ import { StatIcon } from '../components/StatIcon';
 import { Motion } from '../models/motion.model';
 import { stats } from '../models/stats.model';
 import { PolicyState, PolicyBaseData } from '../models/policy.model';
+import { getAssociatedVoteColor, getCostToInfluence, getActorApproval } from '../helpers/politics.helpers';
+import { getById } from '../helpers/entity.helpers';
+import { SettlementProfile } from './SettlementProfile';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -37,7 +40,7 @@ class Game extends React.Component {
         .filter((x: ActorWithState) => x.id !== this.props.player.id)
         .forEach((actor: ActorWithState) => {
           this.props.availableMotions.forEach((motion: Motion) => {
-            const approval = this.getActorApproval(actor, motion);
+            const approval = getActorApproval(actor, motion);
             if (approval > 2.5) {
               this.table(motion.id, actor.id);
             }
@@ -79,7 +82,7 @@ class Game extends React.Component {
     }
     if (currentPhase?.id === 'vote') {
       this.props.availableMotions
-        .filter((motion: Motion) => !!this.getById(this.props.motionsTabled, motion.id))
+        .filter((motion: Motion) => !!getById(this.props.motionsTabled, motion.id))
         .forEach((motion: Motion) => {
           const ugh: Vote[] = this.props.actors?.reduce((acc: Vote[], curr) => ([...acc, this.getVote(motion.id, curr.id)]), []);
           console.log(`All votes for ${motion.name}`, ugh, this.props.motionVotes);
@@ -112,21 +115,6 @@ class Game extends React.Component {
     }
   }
 
-  getActorApproval = (actor: ActorWithState, motion: Motion) => {
-    let approval = 0;
-    motion.effects.forEach(effect => {
-      const position = actor.state.positions.find(p => p.stat === effect.stat);
-      const opposedPosition = actor.state.positions.find(p => stats[p.stat].opposed === effect.stat);
-      if (position) {
-        approval += (effect.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * (position.passion / 100);
-      }
-      if (opposedPosition) {
-        approval -= (effect.amount || 0) * (opposedPosition.attitude === 'raise' ? 1 : -1) * ((opposedPosition.passion / 2) / 100);
-      }
-    });
-    return approval;
-  }
-
   tallyVotes = (votes: Vote[]) => {
     const positions = ['yea', 'abstain', 'nay'];
     const _votes: {[id: string]: {voters: number, total: number}} = {};
@@ -148,32 +136,23 @@ class Game extends React.Component {
     });
   }
 
-  getCostToInfluence = (actor: any, approval: number) => {
-    const costToInfluence: {[id: string]: number} = {
-      yea: Math.max(100, (1 + Math.max(0, -approval)) * 100 * actor.voteWeight),
-      abstain: Math.max(100, (1 + Math.max(0, Math.abs(approval) / 2)) * 100 * actor.voteWeight),
-      nay: Math.max(100, (1 + Math.max(0, approval)) * 100 * actor.voteWeight)
-    }
-    return costToInfluence;
-  }
-
   handleVote = () => {
     let changes: Vote[] = [];
     const offers: {[actorId: string]: Vote[]} = {}
 
     const tabledMotions = this.props?.availableMotions
-      .map(motion => ({...motion, tabledBy: this.getById(this.props.motionsTabled, motion.id)?.tabledBy}))
+      .map(motion => ({...motion, tabledBy: getById(this.props.motionsTabled, motion.id)?.tabledBy}))
       .filter(motion => !!motion.tabledBy)
 
     tabledMotions.forEach(motion => {
       const actors = this.props?.actors
         .map(actor => {
-          const approval = this.getActorApproval(actor, motion);
-          const costToInfluence = this.getCostToInfluence(actor, approval);
+          const approval = getActorApproval(actor, motion);
+          const costToInfluence = getCostToInfluence(actor, approval);
           return {...actor, approval: approval, costToInfluence: costToInfluence, position: approval > 0 ? 'yea' : approval < 0 ? 'nay' : 'abstain'}
         });
 
-      actors.forEach(actor => {
+      actors.filter(x => x.id !== this.props.player.id).forEach(actor => {
         changes.push({
           actorId: actor.id,
           motionId: motion.id,
@@ -183,7 +162,7 @@ class Game extends React.Component {
       })
 
       // Now they make offers!
-      actors.filter(x => Math.abs(x.approval) > 3).reverse().forEach(actor => {
+      actors.filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3).reverse().forEach(actor => {
         const purchaseOptions = actors
           .filter(x => x.id !== actor.id && (!!this.props.motionVotes[motion.id, actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
           .shuffle()
@@ -235,14 +214,9 @@ class Game extends React.Component {
               if (bought) {
                 offers[_actor.id] = offers[_actor.id] || [];
                 offers[_actor.id].push(boughtVote);
-                // _actor.existingVoteIndex !== -1 ? changes[_actor.existingVoteIndex] = boughtVote : changes.push(boughtVote);
                 votesBought += _actor.voteWeight;
                 capital -= amountSpent;
                 amountSpentSoFar += amountSpent;
-                /*
-                actorChanges.push({id: actor.id, changes: {capital: actor.state.capital - amountSpent}});
-                actorChanges.push({id: _actor.id, changes: {capital: _actor.state.capital + amountSpent}});
-                */
                 console.log(`${actor.name} wants to buy ${boughtVote.vote} vote from ${_actor.name} for ${amountSpent}`);
               }
             }
@@ -258,7 +232,7 @@ class Game extends React.Component {
   handleOffers = () => {
     const changes: Vote[] = [];
     const tabledMotions = this.props?.availableMotions
-      .map(motion => ({...motion, tabledBy: this.getById(this.props.motionsTabled, motion.id)?.tabledBy}))
+      .map(motion => ({...motion, tabledBy: getById(this.props.motionsTabled, motion.id)?.tabledBy}))
       .filter(motion => !!motion.tabledBy)
 
     tabledMotions.forEach(motion => {
@@ -285,21 +259,6 @@ class Game extends React.Component {
 
     console.log(changes);
     this.props.dispatch(changeVotes(changes));
-  }
-
-  getAssociatedVoteColor(vote: string) {
-    switch (vote) {
-      case 'yea':
-        return 'green';
-      case 'nay':
-        return 'crimson';
-      default:
-        return 'grey';
-    }
-  }
-
-  makeOffer = (actorId: string, motionId: string, vote: string, amountSpent: number) => {
-    this.props.dispatch(changeVote({actorId: actorId, motionId: motionId, vote: vote, reason: 'bought', purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}}));
   }
 
   table = (motionId: string, actorId: string) => {
@@ -336,13 +295,13 @@ class Game extends React.Component {
     console.log('voting', motionId);
   };
 
-  getById = (arr: any[], id: string) => {
-    return arr.find((x: any) => x.id === id);
-  }
-
   inspectMotion = (motionId: string) => {
     this.inspectedMotion = (this.inspectedMotion === motionId) ? '' : motionId;
     console.log('now inspecting', this.inspectedMotion);
+  }
+
+  makeOffer = (actorId: string, motionId: string, vote: string, amountSpent: number) => {
+    this.props.dispatch(changeVote({actorId: actorId, motionId: motionId, vote: vote, reason: 'bought', purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}}));
   }
 
   phaseFunc: {[id: string]: (motionid: string, actorId: string) => void} = {table: this.table, vote: this.vote};
@@ -352,30 +311,7 @@ class Game extends React.Component {
       <div className={"fade--full" + (!!this.props.motionVotes[this.inspectedMotion] && ' active')}></div>
       <div className="mb-4">
         <h2>Profile</h2>
-        <div>
-          <ul className="d-flex flex-wrap" style={{width: '250px'}}>
-            {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => (
-              <li key={x} style={{minWidth: '60px'}}><StatIcon stat={x} mode='modifier' value={this.props.currentSettlement?.derived?.profile[x]}></StatIcon></li>
-            ))}
-          </ul>
-          <ul>
-            {Object.keys(this.props.currentSettlement?.state?.policies).map(key => {
-              const policy: PolicyBaseData | undefined = this.props.policies.find(x => x.id === key);
-              const stance = policy?.stances[this.props.currentSettlement?.state?.policies[key]];
-              return (
-                <li key={key}>
-                  <div className="d-inline-block" style={{minWidth: '150px'}}>
-                    {policy?.label}
-                  </div>
-                  &nbsp;
-                  <div className="d-inline-block font-weight-bold" style={{minWidth: '100px'}}>{stance?.label}</div>
-                  &nbsp;
-                  {stance?.effects.map(x => (<span key={x.stat} style={{minWidth: '60px'}} className="d-inline-block"><StatIcon stat={x.stat} mode='modifier' value={x.amount}></StatIcon></span>))}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <SettlementProfile settlement={this.props.currentSettlement} policies={this.props.policies}></SettlementProfile>
 
         <h2 className="mt-5">Politics</h2>
         <div>
@@ -391,7 +327,7 @@ class Game extends React.Component {
             {this.props.phase?.id === 'table' ? 'Opportunities' : 'Measures'}
           </h3>
           {this.props.availableMotions
-              .map(motion => ({...motion, onTable: this.getById(this.props.motionsTabled, motion.id)}))
+              .map(motion => ({...motion, onTable: getById(this.props.motionsTabled, motion.id)}))
               .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
               .map(motion => (
             <div key={motion.id}
@@ -400,7 +336,7 @@ class Game extends React.Component {
                   onClick={() => this.inspectMotion(motion.id)}>
                 <MotionInfo motion={motion}
                     mode={this.props.phase?.id}
-                    tabledBy={this.getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
+                    tabledBy={getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
                   {this.props.phase?.id !== 'table' ?
                     <span>
                       Yea: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0})
@@ -454,7 +390,7 @@ class Game extends React.Component {
           ))}
         </div>
         <div className="col-6 border-left">
-          <h3 className="mb-3">Congress</h3>
+          <h3 className="mb-3">Circle</h3>
           {this.props.actors.map((x, i) => (
             <div className="mb-3 btn-group-vertical bg-white w-100 rounded actor__wrapper" key={x.id}>
               <button className="btn btn-outline-dark w-100 text-left">
@@ -472,11 +408,11 @@ class Game extends React.Component {
                 {!!this.props.motionVotes[this.inspectedMotion] ? (
                   <div>
                     <div>
-                      Voted <b style={{color: this.getAssociatedVoteColor(this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain')}}>{this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain'}</b>
+                      Voted <b style={{color: getAssociatedVoteColor(this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain')}}>{this.props.motionVotes[this.inspectedMotion][x.id]?.vote||'abstain'}</b>
                     </div>
                     {!!this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement && (
                       <div>
-                        on request of {this.getById(this.props.actors, this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>
+                        on request of {getById(this.props.actors, this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>
                       </div>
                     )}
                   </div>
@@ -495,8 +431,8 @@ class Game extends React.Component {
               </button>
               {(x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.inspectedMotion)) ? (() => {
                 // @ts-ignore;
-                const approval = this.getActorApproval(x, this.props.availableMotions.find(y => y.id === this.inspectedMotion));
-                const costToInfluence = this.getCostToInfluence(x, approval);
+                const approval = getActorApproval(x, this.props.availableMotions.find(y => y.id === this.inspectedMotion));
+                const costToInfluence = getCostToInfluence(x, approval);
                 const currentOffer = this.props.currentVoteOffers[x.id]?.find(x => x.motionId === this.inspectedMotion)?.purchaseAgreement;
                 return (
                   <div className="btn-group w-100">
