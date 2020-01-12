@@ -25,6 +25,51 @@
 		}
 	},
 	{
+		"id": "basic_education",
+		"label": "Basic Education",
+		"canBeRepealed": true,
+		"stances": {
+			"subsidized": {
+				"label": "Subsidized",
+				"effects": [{"stat": "ignorance", "amount": -10}]
+			},
+			"restricted": {
+				"label": "Restricted",
+				"effects": [{"stat": "ignorance", "amount": 10}, {"stat": "dignity", "amount": -15}]
+			}
+		}
+	},
+	{
+		"id": "censorship",
+		"label": "Censorship",
+		"canBeRepealed": true,
+		"stances": {
+			"permitted": {
+				"label": "Policy",
+				"effects": [{"stat": "purpose", "amount": 5}, {"stat": "ignorance", "amount": 20}]
+			},
+			"forbidden": {
+				"label": "Forbidden",
+				"effects": [{"stat": "purpose", "amount": -15}, {"stat": "ignorance", "amount": -15}]
+			}
+		}
+	},
+	{
+		"id": "higher_education",
+		"label": "Higher Education",
+		"canBeRepealed": true,
+		"stances": {
+			"subsidized": {
+				"label": "Subsidized",
+				"effects": [{"stat": "dignity", "amount": 20}, {"stat": "education", "amount": 45}]
+			},
+			"restricted": {
+				"label": "Restricted",
+				"effects": [{"stat": "dignity", "amount": -35}, {"stat": "education", "amount": -40}]
+			}
+		}
+	},
+	{
 		"id": "slavery",
 		"label": "Slavery",
 		"canBeRepealed": true,
@@ -39,7 +84,7 @@
 			},
 			"outlawed": {
 				"label": "Outlawed",
-				"effects": [{"stat": "poverty", "amount": 20}, {"stat": "dignity", "amount": 10}]
+				"effects": [{"stat": "poverty", "amount": 10}, {"stat": "dignity", "amount": 30}]
 			}
 		}
 	},
@@ -48,9 +93,9 @@
 		"label": "Military Tradition",
 		"canBeRepealed": true,
 		"stances": {
-			"enforced": {
-				"label": "Enforced",
-				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "purpose", "amount": 10}, {"stat": "dignity", "amount": -10}]
+			"enshrined": {
+				"label": "Enshrined",
+				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "purpose", "amount": 10}]
 			},
 			"encouraged": {
 				"label": "Encouraged",
@@ -89,11 +134,11 @@
 		}
 	},
 	{
-		"id": "revenge",
-		"label": "Revenge",
+		"id": "self_defense",
+		"label": "Self-Defense",
 		"stances": {
-			"blessed": {
-				"label": "Blessed",
+			"encouraged": {
+				"label": "Encouraged",
 				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "dignity", "amount": 15}]
 			},
 			"permitted": {

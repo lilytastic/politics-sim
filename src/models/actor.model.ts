@@ -1,6 +1,7 @@
 
 export interface ActorBaseData {
   id: string;
+  gender: string;
   name: string;
 }
 export interface ActorState {
@@ -28,13 +29,15 @@ export const actors: ActorWithState[] = [
   {
     id: 'player',
     name: 'Ananth',
+    gender: 'm',
     state: {
       positions: []
     }
   },
   {
-    id: '1',
-    name: 'Guy 1',
+    id: 'shireen',
+    name: 'Shireen',
+    gender: 'f',
     state: {
       positions: [
         {
@@ -51,8 +54,9 @@ export const actors: ActorWithState[] = [
     }
   },
   {
-    id: '2',
-    name: 'Guy 2',
+    id: 'gretchen',
+    name: 'Gretchen',
+    gender: 'f',
     state: {
       positions: [
         {
@@ -69,26 +73,28 @@ export const actors: ActorWithState[] = [
     }
   },
   {
-    id: '3',
-    name: 'Guy 3',
+    id: 'vex',
+    name: 'Vex',
+    gender: 'f',
     state: {
       positions: [
+        {
+          stat: 'vigilance',
+          attitude: 'raise',
+          passion: 50
+        },
         {
           stat: 'education',
           attitude: 'lower',
           passion: 50
-        },
-        {
-          stat: 'vigilance',
-          attitude: 'raise',
-          passion: 50
         }
       ]
     }
   },
   {
-    id: '4',
-    name: 'Guy 4',
+    id: 'abigail',
+    name: 'Abigail',
+    gender: 'f',
     state: {
       positions: [
         {
@@ -105,8 +111,9 @@ export const actors: ActorWithState[] = [
     }
   },
   {
-    id: '5',
-    name: 'Guy 5',
+    id: 'cecilia',
+    name: 'Cecilia',
+    gender: 'f',
     state: {
       positions: [
         {
@@ -123,8 +130,9 @@ export const actors: ActorWithState[] = [
     }
   },
   {
-    id: '6',
-    name: 'Guy 6',
+    id: 'matilda',
+    name: 'Matilda',
+    gender: 'f',
     state: {
       positions: [
         {

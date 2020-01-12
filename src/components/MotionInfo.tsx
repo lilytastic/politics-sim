@@ -4,11 +4,11 @@ import { StatIcon } from './StatIcon';
 export const MotionInfo = ({ motion, tabledBy, children }: any) => {return (
   <div>
     <div className="d-flex justify-content-between">
-      <div className="large mb-1 font-bold">
+      <div className="large mb-1 font-weight-bold">
         {motion.name}
       </div>
       <div>
-        {tabledBy ? (<span>Tabled by <b>{tabledBy?.name}</b></span>) : ''}
+        {tabledBy ? (<span>Drafted by <b>{tabledBy?.name}</b></span>) : ''}
       </div>
     </div>
     <div className="d-flex justify-content-between">

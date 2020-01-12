@@ -46,7 +46,15 @@ class Game extends React.Component {
   }
 
   grantAllowance = () => {
-    this.props.dispatch(updateActors((this.props.actors||[]).map((x: ActorWithState) => ({id: x.id, changes: {capital: x.state.capital + 100}}))));
+    this.props.dispatch(updateActors((this.props.actors||[]).map(actor => {
+      const softCap = actor.offices.length ? Math.max(...actor.offices.map(x => x.softCapitalCap)) : 0;
+      const allowance = actor.offices.length ? actor.offices.reduce((acc, curr) => acc + curr.softCapitalPerCycle, 0) : 0;
+      const capital = Math.max(
+        actor.state.capital,
+        Math.min(softCap, actor.state.capital + allowance)
+      );
+      return {id: actor.id, changes: {capital: capital}}
+    })));
   }
 
   getVote(motionId: string, actorId: string) {
@@ -104,7 +112,7 @@ class Game extends React.Component {
         approval += (effect.amount || 0) * (position.attitude === 'raise' ? 1 : -1) * (position.passion / 100);
       }
       if (opposedPosition) {
-        approval -= (effect.amount || 0) * (opposedPosition.attitude === 'raise' ? 1 : -1) * (opposedPosition.passion / 100);
+        approval -= (effect.amount || 0) * (opposedPosition.attitude === 'raise' ? 1 : -1) * ((opposedPosition.passion / 2) / 100);
       }
     });
     return approval;
@@ -176,7 +184,7 @@ class Game extends React.Component {
         <div>
           <ul className="d-flex flex-wrap" style={{width: '250px'}}>
             {Object.keys(this.props.currentSettlement?.derived?.profile).map(x => (
-              <li key={x} style={{minWidth: '60px'}}><StatIcon stat={x} value={this.props.currentSettlement?.derived?.profile[x]}></StatIcon></li>
+              <li key={x} style={{minWidth: '60px'}}><StatIcon stat={x} mode='modifier' value={this.props.currentSettlement?.derived?.profile[x]}></StatIcon></li>
             ))}
           </ul>
           <ul>
@@ -185,7 +193,13 @@ class Game extends React.Component {
               const stance = policy?.stances[this.props.currentSettlement?.state?.policies[key]];
               return (
                 <li key={key}>
-                  {policy?.label}: {stance?.label} ({stance?.effects.map(x => (<StatIcon key={x.stat} stat={x.stat} value={x.amount}></StatIcon>))})
+                  <div className="d-inline-block" style={{minWidth: '150px'}}>
+                    {policy?.label}
+                  </div>
+                  &nbsp;
+                  <div className="d-inline-block font-weight-bold" style={{minWidth: '100px'}}>{stance?.label}</div>
+                  &nbsp;
+                  {stance?.effects.map(x => (<span style={{minWidth: '60px'}} className="d-inline-block"><StatIcon key={x.stat} stat={x.stat} value={x.amount}></StatIcon></span>))}
                 </li>
               );
             })}
@@ -201,7 +215,10 @@ class Game extends React.Component {
         </div>
       </div>
       <div className="row">
-        <div className="col">
+        <div className="col-7">
+          <h3 className="mb-3">
+            {this.props.phase?.id === 'table' ? 'Opportunities' : 'Measures'}
+          </h3>
           {this.props.availableMotions
               .map(motion => ({...motion, onTable: this.getById(this.props.motionsTabled, motion.id)}))
               .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
@@ -242,7 +259,7 @@ class Game extends React.Component {
                       disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id)}
                       className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
                       onClick={() => this.table(motion.id, this.props.player.id)}>
-                    {!!motion.onTable ? 'Rescind' : 'Table'}
+                    {!!motion.onTable ? 'Rescind' : 'Draft'}
                     &nbsp;&nbsp;&nbsp;
                     <StatIcon stat='capital' value={motion.costToTable}></StatIcon>
                   </button>
@@ -251,13 +268,17 @@ class Game extends React.Component {
             </div>
           ))}
         </div>
-        <div className="col">
+        <div className="col-5 border-left">
+          <h3 className="mb-3">Congress</h3>
           {this.props.actors.map((x, i) => (
             <div className="mb-3" key={i}>
-              <div className="d-flex align-items-center">
-                <div className="w-25">{i+1}. {x.id !== this.props.player.id ? (<span>{x.name}</span>) : (<b>You</b>)}</div>
-                <div><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
+              <div>
+                {x.offices.length > 0 && (x.offices[0].name.basic + ' ')}
+                <b>{x.name}</b>
+                {x.id === this.props.player.id && (<span>&nbsp;(You)</span>)}
               </div>
+              <div><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
+              <div>{x.voteWeight}</div>
               {x.state.positions.map(position => (
                 <span key={position.stat} style={{opacity: position.passion / 100.0}}>
                   <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
@@ -287,7 +308,10 @@ const mapStateToProps = (state: State) => {
     phase: state.phases[state.saveData.currentPhase || 0],
     phases: state.phases,
     currentSettlement: {...settlement, derived: {profile: profile}},
-    actors: state.actors.map(x => (returnActorWithState(x, state.saveData.actorState[x.id]))),
+    actors: state.actors.map(x => ({...returnActorWithState(x, state.saveData.actorState[x.id])})).map(actor => {
+      const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
+      return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
+    }).sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1),
     player: state.actors.find((x: any) => x.id === 'player') || state.actors[0],
     motionsTabled: state.saveData.motionsTabled,
     motionVotes: state.saveData.motionVotes,

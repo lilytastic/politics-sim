@@ -2,6 +2,7 @@ import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model
 import { Motion } from "../models/motion.model";
 import { PolicyBaseData, PolicyState } from "../models/policy.model";
 import * as Policies from "../content/policies.json";
+import { SettlementState, SettlementBaseData, PoliticalOffice } from "../models/settlement.model";
 
 declare global {
   interface Array<T> {
@@ -46,6 +47,74 @@ if (!Array.prototype.toEntities) {
   }
 }
 
+interface PoliticalStructure {
+  name: string;
+  offices: {[id: string]: PoliticalOffice}
+}
+
+
+const OFFICE_CHIEF: PoliticalOffice = {
+  name: {basic: 'Chief', feminine: 'Chieftess'},
+  voteWeight: 5,
+  softCapitalPerCycle: 1000,
+  softCapitalCap: 5000
+}
+const OFFICE_ROYAL_ADMINISTRATOR: PoliticalOffice = {
+  name: {basic: 'Royal Administrator'},
+  voteWeight: 3,
+  softCapitalPerCycle: 500,
+  softCapitalCap: 3000
+}
+const OFFICE_ELDER: PoliticalOffice = {
+  name: {basic: 'Elder'},
+  voteWeight: 3,
+  softCapitalPerCycle: 500,
+  softCapitalCap: 2000
+}
+
+const OFFICE_CHIEFTAIN: PoliticalOffice = {
+  name: {basic: 'Chieftain'},
+  voteWeight: 3,
+  softCapitalPerCycle: 500,
+  softCapitalCap: 2500
+}
+const OFFICE_ADMINISTRATOR: PoliticalOffice = {
+  name: {basic: 'Administrator'},
+  voteWeight: 2,
+  softCapitalPerCycle: 200,
+  softCapitalCap: 1000
+}
+const OFFICE_DEFENSE_SECRETARY: PoliticalOffice = {
+  name: {basic: 'Secretary of Defense'},
+  voteWeight: 2,
+  softCapitalPerCycle: 200,
+  softCapitalCap: 1000
+}
+
+const OFFICE_EDUCATION_SECRETARY: PoliticalOffice = {
+  name: {basic: 'Secretary of Education'},
+  voteWeight: 2,
+  softCapitalPerCycle: 150,
+  softCapitalCap: 800
+}
+const OFFICE_TREASURER: PoliticalOffice = {
+  name: {basic: 'Treasurer'},
+  voteWeight: 2,
+  softCapitalPerCycle: 150,
+  softCapitalCap: 800
+}
+
+const POLITICAL_STRUCTURE_TRIBAL: PoliticalStructure = {
+  name: 'Tribal',
+  offices: {
+    'chieftain': OFFICE_CHIEFTAIN,
+    'elder': OFFICE_ELDER,
+    'admin': {...OFFICE_ADMINISTRATOR, name: {basic: 'Advisor'}},
+    'defense_sec': {...OFFICE_DEFENSE_SECRETARY, name: {basic: 'Warlord'}},
+    'education_sec': {...OFFICE_EDUCATION_SECRETARY, name: {basic: 'Guru'}}
+  }
+}
+
 export interface State {
   screen: string;
   actors: ActorBaseData[];
@@ -65,21 +134,13 @@ export interface SaveData {
   currentPhaseCountdown: number;
 }
 
-export interface SettlementBaseData {
-  id: string;
-}
-
-export interface SettlementState {
-  policies: {[id: string]: string};
-}
-
 const initialState: State = {
   screen: 'title',
   actors: [],
   // @ts-ignore;
   policies: Policies.default,
   settlements: [{id: 'test'}],
-  phases: [{ id: 'table', label: 'Table', countdown: 20 }, { id: 'vote', label: 'Vote', countdown: 40 }],
+  phases: [{ id: 'table', label: 'Draft', countdown: 20 }, { id: 'vote', label: 'Vote', countdown: 40 }],
   saveData: {
     actorState: {},
     availableMotions: [],
@@ -87,7 +148,15 @@ const initialState: State = {
     motionVotes: {}, // type can be 'motivated', 'bought', 'respect'
     settlementState: {
       'test': {
-        policies: {}
+        policies: {},
+        offices: POLITICAL_STRUCTURE_TRIBAL.offices,
+        officeOccupants: {
+          chieftain: 'shireen',
+          elder: 'abigail',
+          admin: 'vex',
+          defense_sec: 'gretchen',
+          education_sec: 'matilda'
+        }
       }
     },
     currentPhase: 0,
@@ -213,7 +282,7 @@ export function rootReducer(state = initialState, action: any): State {
           const effects = policy.stances[existingStance].effects.map(x => ({stat: x.stat, amount: -x.amount}));
           possibleMotions.push({
             id: `repeal_${policy.id}`,
-            name: `Repeal ${policy.label}`,
+            name: `Repeal Stance on ${policy.label}`,
             change: {
               type: 'REPEAL_POLICY',
               payload: {policyId: policy.id}
@@ -236,7 +305,7 @@ export function rootReducer(state = initialState, action: any): State {
           });
           possibleMotions.push({
             id: `${policy.id}_${key}`,
-            name: `${policy.label} is ${stance.label}`,
+            name: `Declare ${policy.label} ${stance.label}`,
             change: {
               type: 'CHANGE_POLICY',
               payload: {policyId: policy.id, stanceId: key}
