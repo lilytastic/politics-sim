@@ -52,7 +52,7 @@ class Game extends React.Component {
       const allowance = actor.offices.length ? actor.offices.reduce((acc, curr) => acc + curr.softCapitalPerCycle, 0) : 0;
       const capital = Math.max(
         actor.state.capital,
-        Math.min(softCap, actor.state.capital + allowance)
+        Math.min(softCap, actor.state.capital + Math.max(100, allowance))
       );
       return {id: actor.id, changes: {capital: capital}}
     })));
@@ -418,11 +418,24 @@ class Game extends React.Component {
                       className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'yea' ? 'outline-' : ''}success`}
                       onClick={() => this.vote(motion.id, this.props.player.id, 'yea')}>
                     Yea
+                    {!!this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'yea')?.length && (
+                      <span>
+                        &nbsp;
+                        <StatIcon stat='capital' value={this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'yea')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
+                      </span>
+                    )}
                   </button>
                   <button style={{borderTopRightRadius: 0}}
                       className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'nay' ? 'outline-' : ''}danger`}
                       onClick={() => this.vote(motion.id, this.props.player.id, 'nay')}>
                     Nay
+                    &nbsp;
+                    {!!this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'nay')?.length && (
+                      <span>
+                        &nbsp;
+                        <StatIcon stat='capital' value={this.props.currentVoteOffers['player']?.filter(x => x.motionId === motion.id && x.vote === 'nay')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
+                      </span>
+                    )}
                   </button>
                 </div>
               ) : (
@@ -488,7 +501,7 @@ class Game extends React.Component {
                 return (
                   <div className="btn-group w-100">
                     {[{key: 'yea', color: 'success'}, {key: 'abstain', color: 'secondary'}, {key: 'nay', color: 'danger'}].map(key => (
-                      <button key={key.key} disabled={this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id}
+                      <button key={key.key} disabled={this.props.player.state.capital < Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]) || this.props.motionsTabled.find(y => y.id === this.inspectedMotion)?.tabledBy === x.id}
                           className={`btn btn-outline-${key.color} w-100`}
                           onClick={() => this.makeOffer(x.id, this.inspectedMotion, key.key, Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]))}>
                         {key.key} <StatIcon stat='capital' value={Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key])}></StatIcon>
@@ -517,15 +530,17 @@ const mapStateToProps = (state: State) => {
   });
   Object.keys(profile).forEach(x => profile[x] = Math.max(0, profile[x]));
 
+  const actors = state.actors.map(x => ({...returnActorWithState(x, state.saveData.actorState[x.id])})).map(actor => {
+    const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
+    return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
+  }).sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
+
   return {
     phase: state.phases[state.saveData.currentPhase || 0],
     phases: state.phases,
     currentSettlement: {...settlement, derived: {profile: profile}},
-    actors: state.actors.map(x => ({...returnActorWithState(x, state.saveData.actorState[x.id])})).map(actor => {
-      const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
-      return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
-    }).sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1),
-    player: state.actors.find((x: any) => x.id === 'player') || state.actors[0],
+    actors: actors,
+    player: actors.find((x: any) => x.id === 'player') || actors[0],
     motionsTabled: state.saveData.motionsTabled,
     motionVotes: state.saveData.motionVotes,
     currentVoteOffers: state.saveData.currentVoteOffers,
