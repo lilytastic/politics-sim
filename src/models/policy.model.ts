@@ -1,6 +1,7 @@
 export interface PolicyBaseData {
 	id: string;
 	label: string;
+	canBeRepealed?: boolean;
 	stances: {[id: string]: PolicyStance};
 }
 

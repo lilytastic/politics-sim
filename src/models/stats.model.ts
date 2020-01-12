@@ -13,10 +13,10 @@ export const stats: {[id: string]: Stat} = {
     icon: 'handshake',
     color: 'crimson'
   },
-  'faith': {
+  'purpose': {
     label: 'Purpose',
-    opposed: 'disobedience',
-    icon: 'praying-hands',
+    opposed: 'dignity',
+    icon: 'pray',
     color: 'MEDIUMPURPLE'
   },
   'joy': {
@@ -31,42 +31,44 @@ export const stats: {[id: string]: Stat} = {
     icon: 'book',
     color: 'cadetblue'
   },
+  'oppression': {
+    label: 'Oppression',
+    opposed: 'freedom',
+    icon: 'link',
+    color: 'grey'
+  },
   'vigilance': {
     label: 'Vigilance',
     opposed: 'threat',
     icon: 'shield-alt',
     color: 'ROYALBLUE'
   },
-  'disobedience': {
-    label: 'Disobedience',
+  'dignity': {
+    label: 'Dignity',
     color: 'INDIANRED',
-    opposed: 'faith',
-    description: `Our own people are secretly wishing for our fall.`,
-    icon: 'fist-raised',
-    isNegative: true,
+    opposed: 'purpose',
+    description: `Our people are empowered, free-thinking, and disobedient.`,
+    icon: 'fist-raised'
   },
   'poverty': {
     label: 'Squalor',
     color: 'darkgoldenrod',
     opposed: 'joy',
     description: `The people wallow in poverty and debt, easy prey for criminals and slavers.`,
-    icon: 'balance-scale-right',
-    isNegative: true,
+    icon: 'balance-scale-right'
   },
   'ignorance': {
     label: 'Ignorance',
     color: 'silver',
     opposed: 'education',
     description: `People have given themselves over to lies, stubbornness, and outright stupidity.`,
-    icon: 'eye-slash',
-    isNegative: true,
+    icon: 'eye-slash'
   },
   'threat': {
     label: 'Danger',
     color: '#CA2E2E',
     opposed: 'vigilance',
     description: `Our enemies are gathering, inside and out.`,
-    icon: 'crosshairs',
-    isNegative: true,
+    icon: 'crosshairs'
   }
 }

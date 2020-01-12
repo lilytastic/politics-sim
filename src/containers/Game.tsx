@@ -273,7 +273,7 @@ class Game extends React.Component {
 
 const mapStateToProps = (state: State) => {
   const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
-  const profile: {[id: string]: number} = {faith: 0, joy: 0, education: 0, vigilance: 0, disobedience: 0, poverty: 0, ignorance: 0, threat: 0};
+  const profile: {[id: string]: number} = {purpose: 0, joy: 0, education: 0, vigilance: 0, dignity: 0, poverty: 0, ignorance: 0, threat: 0};
   Object.keys(settlement.state.policies).forEach(policyId => {
     const stance = settlement.state.policies[policyId];
     state.policies.find(x => x.id === policyId)?.stances[stance].effects.forEach(effect => {
@@ -281,6 +281,7 @@ const mapStateToProps = (state: State) => {
       profile[effect.stat] += effect.amount;
     });
   });
+  Object.keys(profile).forEach(x => profile[x] = Math.max(0, profile[x]));
 
   return {
     phase: state.phases[state.saveData.currentPhase || 0],

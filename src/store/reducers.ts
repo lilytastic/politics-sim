@@ -122,7 +122,6 @@ export function rootReducer(state = initialState, action: any): State {
     case 'PASS_MOTION':
       switch (action.motion.change.type) {
         case 'CHANGE_POLICY':
-          // payload: policyId, stanceId
           const settlementState = Object.keys(state.saveData.settlementState)
             .map((key) => {
               const currentState = state.saveData.settlementState[key];
@@ -136,6 +135,22 @@ export function rootReducer(state = initialState, action: any): State {
             saveData: {
               ...state.saveData,
               settlementState: settlementState.toEntities()
+            }
+          };
+        case 'REPEAL_POLICY':
+          const _settlementState = Object.keys(state.saveData.settlementState)
+            .map((key) => {
+              const currentState = state.saveData.settlementState[key];
+              const newPolicies = {...currentState.policies};
+              delete newPolicies[action.motion.change.payload.policyId];
+              return {...state.saveData.settlementState[key], id: key, policies: newPolicies};
+            });
+          console.log(_settlementState, _settlementState.toEntities());
+          return {
+            ...state,
+            saveData: {
+              ...state.saveData,
+              settlementState: _settlementState.toEntities()
             }
           };
         default:
@@ -193,9 +208,25 @@ export function rootReducer(state = initialState, action: any): State {
 
       const possibleMotions: Motion[] = [];
       state.policies.forEach(policy => {
+        const existingStance = settlementState?.policies[policy.id];
+        if (policy.canBeRepealed && existingStance) {
+          const effects = policy.stances[existingStance].effects.map(x => ({stat: x.stat, amount: -x.amount}));
+          possibleMotions.push({
+            id: `repeal_${policy.id}`,
+            name: `Repeal ${policy.label}`,
+            change: {
+              type: 'REPEAL_POLICY',
+              payload: {policyId: policy.id}
+            },
+            costToTable: effects.reduce((acc, curr) => {
+              let amount = curr.amount;
+              return acc + Math.abs(amount);
+            }, 0) * 20,
+            effects: effects
+          });
+        }
         Object.keys(policy.stances).forEach(key => {
           const stance = policy.stances[key];
-          const existingStance = settlementState?.policies[policy.id];
           const effects = stance.effects.map(x => {
             const relevantEffect = existingStance ? policy.stances[existingStance].effects.find(eff => eff.stat === x.stat) : null;
             return {

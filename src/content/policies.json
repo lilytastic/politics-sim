@@ -2,28 +2,89 @@
 	{
 		"id": "curfew",
 		"label": "Curfew",
+		"canBeRepealed": true,
 		"stances": {
 			"mandatory": {
 				"label": "Mandatory",
-				"effects": [{"stat": "disobedience", "amount": -10}, {"stat": "joy", "amount": -15}]
-			},
-			"none": {
-				"label": "Lifted",
-				"effects": [{"stat": "vigilance", "amount": -10}]
+				"effects": [{"stat": "dignity", "amount": -10}, {"stat": "joy", "amount": -15}]
 			}
 		}
 	},
 	{
-		"id": "public",
+		"id": "public_gathering",
 		"label": "Public Gathering",
 		"stances": {
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "disobedience", "amount": 10}, {"stat": "education", "amount": 10}]
+				"effects": [{"stat": "dignity", "amount": 10}, {"stat": "education", "amount": 10}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "disobedience", "amount": -10}, {"stat": "education", "amount": -10}]
+				"effects": [{"stat": "dignity", "amount": -10}, {"stat": "education", "amount": -10}]
+			}
+		}
+	},
+	{
+		"id": "slavery",
+		"label": "Slavery",
+		"canBeRepealed": true,
+		"stances": {
+			"blessed": {
+				"label": "Blessed",
+				"effects": [{"stat": "poverty", "amount": -15}, {"stat": "dignity", "amount": -25}, {"stat": "purpose", "amount": 20}]
+			},
+			"permitted": {
+				"label": "Permitted",
+				"effects": [{"stat": "poverty", "amount": -10}, {"stat": "dignity", "amount": -10}]
+			},
+			"outlawed": {
+				"label": "Outlawed",
+				"effects": [{"stat": "poverty", "amount": 20}, {"stat": "dignity", "amount": 10}]
+			}
+		}
+	},
+	{
+		"id": "military_tradition",
+		"label": "Military Tradition",
+		"canBeRepealed": true,
+		"stances": {
+			"enforced": {
+				"label": "Enforced",
+				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "purpose", "amount": 10}, {"stat": "dignity", "amount": -10}]
+			},
+			"encouraged": {
+				"label": "Encouraged",
+				"effects": [{"stat": "vigilance", "amount": 10}, {"stat": "purpose", "amount": 5}]
+			}
+		}
+	},
+	{
+		"id": "mandatory_service",
+		"label": "Military Service",
+		"canBeRepealed": true,
+		"stances": {
+			"mandatory": {
+				"label": "Mandatory",
+				"effects": [{"stat": "vigilance", "amount": 30}, {"stat": "dignity", "amount": -15}]
+			},
+			"encouraged": {
+				"label": "Encouraged",
+				"effects": [{"stat": "vigilance", "amount": 10}]
+			}
+		}
+	},
+	{
+		"id": "conscription",
+		"label": "Conscription",
+		"canBeRepealed": true,
+		"stances": {
+			"aggressive": {
+				"label": "Aggressive",
+				"effects": [{"stat": "vigilance", "amount": 35}, {"stat": "dignity", "amount": -25}]
+			},
+			"permitted": {
+				"label": "Permitted",
+				"effects": [{"stat": "vigilance", "amount": 25}, {"stat": "dignity", "amount": -15}]
 			}
 		}
 	},
@@ -33,15 +94,15 @@
 		"stances": {
 			"blessed": {
 				"label": "Blessed",
-				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "disobedience", "amount": 15}]
+				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "dignity", "amount": 15}]
 			},
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "vigilance", "amount": 5}, {"stat": "disobedience", "amount": 5}]
+				"effects": [{"stat": "vigilance", "amount": 5}, {"stat": "dignity", "amount": 5}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "vigilance", "amount": -10}, {"stat": "disobedience", "amount": -5}]
+				"effects": [{"stat": "vigilance", "amount": -10}, {"stat": "dignity", "amount": -5}]
 			}
 		}
 	},
@@ -51,15 +112,15 @@
 		"stances": {
 			"blessed": {
 				"label": "Blessed",
-				"effects": [{"stat": "joy", "amount": 15}, {"stat": "faith", "amount": -20}]
+				"effects": [{"stat": "joy", "amount": 15}, {"stat": "purpose", "amount": -20}]
 			},
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "joy", "amount": 5}, {"stat": "faith", "amount": -5}]
+				"effects": [{"stat": "joy", "amount": 5}, {"stat": "purpose", "amount": -5}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "joy", "amount": -10}, {"stat": "faith", "amount": 15}]
+				"effects": [{"stat": "joy", "amount": -10}, {"stat": "purpose", "amount": 15}]
 			}
 		}
 	}

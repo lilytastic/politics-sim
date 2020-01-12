@@ -29,18 +29,7 @@ export const actors: ActorWithState[] = [
     id: 'player',
     name: 'Ananth',
     state: {
-      positions: [
-        {
-          stat: 'faith',
-          attitude: 'raise',
-          passion: 50
-        },
-        {
-          stat: 'vigilance',
-          attitude: 'lower',
-          passion: 50
-        }
-      ]
+      positions: []
     }
   },
   {
@@ -54,7 +43,7 @@ export const actors: ActorWithState[] = [
           passion: 50
         },
         {
-          stat: 'faith',
+          stat: 'purpose',
           attitude: 'lower',
           passion: 50
         }
@@ -108,7 +97,7 @@ export const actors: ActorWithState[] = [
           passion: 50
         },
         {
-          stat: 'faith',
+          stat: 'purpose',
           attitude: 'raise',
           passion: 50
         }
@@ -121,7 +110,7 @@ export const actors: ActorWithState[] = [
     state: {
       positions: [
         {
-          stat: 'faith',
+          stat: 'purpose',
           attitude: 'lower',
           passion: 50
         },
