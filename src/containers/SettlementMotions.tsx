@@ -7,6 +7,7 @@ import { changeVote, inspectMotion, tableMotion, updateActors, rescindMotion } f
 import { connect, ConnectedProps } from 'react-redux';
 import { MotionInfo } from '../components/MotionInfo';
 import { Motion } from '../models/motion.model';
+import { returnStandardVotes } from '../helpers/politics.helpers';
 
 class SettlementMotions extends React.Component {
   // @ts-ignore;
@@ -68,6 +69,10 @@ class SettlementMotions extends React.Component {
       .sort((a, b) => (a.purchaseAgreement?.amountSpent || 0) > (b.purchaseAgreement?.amountSpent || 0) ? -1 : 1);
   }
 
+  getVotes = (motion: Motion, vote: string, useVoteWeight = false) => {
+    return this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === vote ? (useVoteWeight ? curr.voteWeight : 1) : 0), 0) || 0;
+  }
+
   render = () => (
     <div>
       {this.props.availableMotions
@@ -83,9 +88,9 @@ class SettlementMotions extends React.Component {
                 tabledBy={getById(this.props.actors, motion.onTable?.tabledBy || -1)}>
               {this.props.phase?.id !== 'table' ?
                 <span>
-                  Yea: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'yea' ? 1 : 0), 0) || 0})
-                  &nbsp;
-                  Nay: <b>{this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? curr.voteWeight : 0), 0) || 0}</b> ({this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === 'nay' ? 1 : 0), 0) || 0})
+                  {returnStandardVotes().map(def => (
+                    <span key={def.key}>{def.key}: <b>{this.getVotes(motion, def.key, true)}</b> ({this.getVotes(motion, def.key)})&nbsp;</span>
+                  ))}
                 </span>
               :
                 null
@@ -94,7 +99,7 @@ class SettlementMotions extends React.Component {
           </button>
           {this.props.phase?.id !== 'table' ? (
             <div className="btn-group w-100">
-              {[{key: 'yea', color: 'success'}, {key: 'nay', color: 'danger'}].map(def => (
+              {returnStandardVotes().map(def => (
                 <button key={def.key} style={{borderTopLeftRadius: 0}}
                     className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== def.key ? 'outline-' : ''}${def.color}`}
                     onClick={() => this.vote(motion.id, this.props.player.id, def.key)}>

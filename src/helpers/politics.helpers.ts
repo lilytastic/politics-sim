@@ -14,6 +14,12 @@ export function getAssociatedVoteColor(vote: string) {
   }
 }
 
+export const returnStandardVotes = (includeAbstainOption = false) => {
+  const basic = [{key: 'yea', color: 'success'}, {key: 'nay', color: 'danger'}];
+  const abstain = {key: 'abstrain', color: 'secondary'};
+  return [...basic, ...(includeAbstainOption ? [abstain] : []) ]
+}
+
 export const getActorApproval = (actor: ActorWithState, motion: Motion) => {
   let approval = 0;
   motion.effects.forEach(effect => {

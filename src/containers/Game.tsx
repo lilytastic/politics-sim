@@ -200,7 +200,7 @@ class Game extends React.Component {
 
         // Actor cares enough to buy votes from other actors.
         const votes = this.tallyVotes(changes);
-        const votesNeeded = 
+        const votesNeeded =
           actor.position === 'yea' ? votes.nay.total - votes.yea.total :
           actor.position === 'nay' ? votes.yea.total - votes.nay.total :
           0;
@@ -212,8 +212,7 @@ class Game extends React.Component {
         const amountToSpend = (capital / 2);
         let amountSpentSoFar = 0;
         purchaseOptions
-          // .filter(x => x.costToInfluence < Math.abs(actor.approval) / 100)
-          .map(_actor => ({..._actor, existingVoteIndex: changes.findIndex(x => x.actorId === _actor.id), existingVote: changes.find(x => x.actorId === _actor.id)}))
+          .map(_actor => ({..._actor, existingVoteIndex: changes.findIndex(x => x.motionId === motion.id && x.actorId === _actor.id), existingVote: changes.find(x => x.motionId === motion.id && x.actorId === _actor.id)}))
           .filter(x => x.costToInfluence[actor.position] <= amountToSpend - amountSpentSoFar)
           .forEach((_actor, i) => {
             if (votesBought >= votesToBuy || amountSpentSoFar >= amountToSpend) {
