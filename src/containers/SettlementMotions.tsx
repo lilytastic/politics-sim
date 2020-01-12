@@ -94,34 +94,25 @@ class SettlementMotions extends React.Component {
           </button>
           {this.props.phase?.id !== 'table' ? (
             <div className="btn-group w-100">
-              <button style={{borderTopLeftRadius: 0}}
-                  className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'yea' ? 'outline-' : ''}success`}
-                  onClick={() => this.vote(motion.id, this.props.player.id, 'yea')}>
-                Yea
-                {!!this.getOffers(motion, 'yea')?.length && (
-                  <span>
-                    &nbsp;
-                    <StatIcon stat='capital' value={this.getOffers(motion, 'yea')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
-                  </span>
-                )}
-              </button>
-              <button style={{borderTopRightRadius: 0}}
-                  className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== 'nay' ? 'outline-' : ''}danger`}
-                  onClick={() => this.vote(motion.id, this.props.player.id, 'nay')}>
-                Nay
-                &nbsp;
-                {!!this.getOffers(motion, 'nay')?.length && (
-                  <span>
-                    &nbsp;
-                    <StatIcon stat='capital' value={this.getOffers(motion, 'nay')[0]?.purchaseAgreement?.amountSpent}></StatIcon>
-                  </span>
-                )}
-              </button>
+              {[{key: 'yea', color: 'success'}, {key: 'nay', color: 'danger'}].map(def => (
+                <button key={def.key} style={{borderTopLeftRadius: 0}}
+                    className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== def.key ? 'outline-' : ''}${def.color}`}
+                    onClick={() => this.vote(motion.id, this.props.player.id, def.key)}>
+                  {def.key}
+                  &nbsp;
+                  {!!this.getOffers(motion, def.key)?.length && (
+                    <span>
+                      &nbsp;
+                      <StatIcon stat='capital' value={this.getOffers(motion, def.key)[0]?.purchaseAgreement?.amountSpent}></StatIcon>
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
           ) : (
             <div className="w-100">
               <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
-                  disabled={!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id)}
+                  disabled={(!motion.onTable && this.props.player.state.capital < motion.costToTable) || (!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id))}
                   className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
                   onClick={() => this.table(motion.id, this.props.player.id)}>
                 {!!motion.onTable ? 'Rescind' : 'Draft'}

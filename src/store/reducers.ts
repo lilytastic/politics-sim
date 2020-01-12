@@ -279,6 +279,7 @@ export function rootReducer(state = initialState, action: any): State {
           ...state.saveData,
           motionsTabled: [],
           motionVotes: {},
+          currentVoteOffers: {},
           inspectedMotion: '',
           availableMotions: motions
         }
