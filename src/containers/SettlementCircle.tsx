@@ -36,7 +36,7 @@ class SettlementCircle extends React.Component {
               <div><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
             </div>
           </div>
-          {!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? (
+          {this.props.phase?.id !== 'table' && !!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? (
             <div>
               <div>
                 {!!this.props.motionVotes[this.props.inspectedMotion]?.[x.id] ? (
@@ -64,7 +64,7 @@ class SettlementCircle extends React.Component {
             ))}
           </div>
         </button>
-        {(x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.props.inspectedMotion)) ? (() => {
+        {(this.props.phase?.id !== 'table' && x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.props.inspectedMotion)) ? (() => {
           // @ts-ignore;
           const approval = getActorApproval(x, this.props.availableMotions.find(y => y.id === this.props.inspectedMotion));
           const costToInfluence = getCostToInfluence(x, approval);
@@ -72,9 +72,10 @@ class SettlementCircle extends React.Component {
           return (
             <div className="btn-group w-100">
               {[{ key: 'yea', color: 'success' }, { key: 'abstain', color: 'secondary' }, { key: 'nay', color: 'danger' }].map(key => (
-                <button key={key.key} disabled={this.props.player.state.capital < Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]) || this.props.motionsTabled.find(y => y.id === this.props.inspectedMotion)?.tabledBy === x.id}
-                  className={`btn btn-outline-${key.color} w-100`}
-                  onClick={() => this.makeOffer(x.id, this.props.inspectedMotion, key.key, Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]))}>
+                <button key={key.key}
+                    className={`btn btn-${(this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote === key.key) ? '' : 'outline-'}${key.color} w-100`}
+                    disabled={this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote === key.key || this.props.player.state.capital < Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]) || this.props.motionsTabled.find(y => y.id === this.props.inspectedMotion)?.tabledBy === x.id}
+                    onClick={() => this.makeOffer(x.id, this.props.inspectedMotion, key.key, Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]))}>
                   {key.key} <StatIcon stat='capital' value={Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key])}></StatIcon>
                 </button>
               ))}
@@ -95,6 +96,7 @@ const mapStateToProps = (state: State) => {
 
   return {
     actors: actors,
+    phase: state.phases[state.saveData.currentPhase || 0],
     player: actors.find((x: any) => x.id === 'player') || actors[0],
     motionsTabled: state.saveData.motionsTabled,
     motionVotes: state.saveData.motionVotes,

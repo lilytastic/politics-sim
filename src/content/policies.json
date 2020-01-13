@@ -16,11 +16,11 @@
 		"stances": {
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "dignity", "amount": 10}, {"stat": "education", "amount": 10}]
+				"effects": [{"stat": "dignity", "amount": 10}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "dignity", "amount": -10}, {"stat": "education", "amount": -10}]
+				"effects": [{"stat": "dignity", "amount": -10}, {"stat": "threat", "amount": -10}]
 			}
 		}
 	},

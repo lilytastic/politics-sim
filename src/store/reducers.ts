@@ -4,16 +4,16 @@ import { PolicyBaseData } from "../models/policy.model";
 import * as Policies from "../content/policies.json";
 import { SettlementState, SettlementBaseData } from "../models/settlement.model";
 import { POLITICAL_STRUCTURE_TRIBAL } from "../content/politicalStructure.const";
+import { Vote } from "../models/vote.model";
 
 declare global {
   interface Array<T> {
     shuffle(): T[];
-    toEntities(): {[id: string]: T};
+    toEntities(): { [id: string]: T };
   }
 }
-
 if (!Array.prototype.shuffle) {
-  Array.prototype.shuffle = function<T>() {
+  Array.prototype.shuffle = function <T>() {
     const woo = [...this];
     var currentIndex = this.length, temporaryValue, randomIndex;
 
@@ -29,12 +29,11 @@ if (!Array.prototype.shuffle) {
     return woo;
   }
 }
-
 if (!Array.prototype.toEntities) {
-  Array.prototype.toEntities = function<T>(preserveId: boolean = true) {
-    const obj: {[id: string]: T} = {};
+  Array.prototype.toEntities = function <T>(preserveId: boolean = true) {
+    const obj: { [id: string]: T } = {};
     for (let i = 0; i < this.length; i++) {
-      const entity = {...this[i]}
+      const entity = { ...this[i] }
       if (preserveId) {
         delete entity.id;
       }
@@ -43,9 +42,6 @@ if (!Array.prototype.toEntities) {
     return obj;
   }
 }
-
-export interface Vote {actorId: string, motionId: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, vote: string; reason: string}
-
 
 export interface State {
   screen: string;

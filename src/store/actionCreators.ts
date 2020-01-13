@@ -1,6 +1,6 @@
 import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
-import { Vote } from "./reducers";
+import { Vote } from "../models/vote.model";
 
 export const changeScreen = (screen: string) => ({
   type: 'CHANGE_SCREEN',

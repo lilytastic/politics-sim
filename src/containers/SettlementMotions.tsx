@@ -2,12 +2,13 @@ import React from 'react';
 import { StatIcon } from '../components/StatIcon';
 import { ActorWithState, returnActorWithState } from '../models/actor.model';
 import { getById } from '../helpers/entity.helpers';
-import { State, Vote } from '../store/reducers';
+import { State } from '../store/reducers';
 import { changeVote, inspectMotion, tableMotion, updateActors, rescindMotion } from '../store/actionCreators';
 import { connect, ConnectedProps } from 'react-redux';
 import { MotionInfo } from '../components/MotionInfo';
 import { Motion } from '../models/motion.model';
 import { returnStandardVotes } from '../helpers/politics.helpers';
+import { Vote } from '../models/vote.model';
 
 class SettlementMotions extends React.Component {
   // @ts-ignore;
