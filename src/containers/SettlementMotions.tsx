@@ -81,7 +81,7 @@ class SettlementMotions extends React.Component {
           .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
           .map(motion => (
         <div key={motion.id}
-            className={"text-left motion__wrapper btn-group-vertical mb-3 w-100 bg-light rounded" + (this.props.inspectedMotion === motion.id && ' motion__wrapper--active')}>
+            className={`text-left motion__wrapper motion__wrapper--${this.props.phase?.id !== 'vote' ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'} btn-group-vertical mb-3 w-100 bg-light rounded` + (this.props.inspectedMotion === motion.id && ' motion__wrapper--active')}>
           <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3"
               onClick={() => this.props.dispatch(inspectMotion(motion.id))}>
             <MotionInfo motion={motion}

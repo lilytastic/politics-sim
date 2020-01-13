@@ -83,7 +83,7 @@ class Game extends React.Component {
   }
 
   onTick = () => {
-    if (this.props.currentPhaseCountdown >= this.props.phase?.countdown) {
+    if (this.props.currentPhaseCountdown >= this.props.phase?.countdown - 1) {
       this.advancePhase();
     } else {
       this.props.dispatch(changeCurrentPhaseCountdown(this.props.currentPhaseCountdown + 1));
@@ -194,7 +194,6 @@ class Game extends React.Component {
         });
       })
     });
-    // this.props.dispatch(changeVotes(changes));
   }
 
   makeOffers = () => {

@@ -17,6 +17,17 @@ code {
   margin: 0 auto;
 }
 
+.motion__wrapper {
+  transition: background .15s ease-in-out;
+}
+
+.motion__wrapper--yea {
+  background: linear-gradient(to left, white, rgb(215, 230, 215));
+}
+.motion__wrapper--nay {
+  background: linear-gradient(to left, rgb(240, 213, 213), white);
+}
+
 .motion__wrapper--active {
   position: relative;
   z-index: 9;
