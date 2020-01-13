@@ -26,7 +26,7 @@ class SettlementCircle extends React.Component {
       .filter(x => x.id === this.props.player?.id || x.voteWeight > 0)
       .sort((a, b) => a.id === this.props.player.id ? -1 : 1)
       .map((x, i) => (
-        <div className="mb-2 btn-group-vertical bg-white w-100 rounded actor__wrapper" key={x.id}>
+        <div className={`${(i === 0 && x.id === this.props.player?.id) ? 'mb-4' : 'mb-2'} btn-group-vertical bg-white w-100 rounded actor__wrapper`} key={x.id}>
           <button className="btn btn-outline-dark w-100 text-left">
             <div className="row">
               <div className="col">
@@ -54,7 +54,7 @@ class SettlementCircle extends React.Component {
                     <span>
                       Voted <b style={{ color: getAssociatedVoteColor(this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote || 'abstain') }}>{this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote || 'abstain'}</b>
                     </span>
-                  ) : 'Vote pending'}
+                  ) : x.voteWeight > 0 ? 'Vote pending' : `Cannot vote`}
                   {!!this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement && (
                     <span>
                       &nbsp;as a favour to {getById(this.props.actors, this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp;&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.props.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>

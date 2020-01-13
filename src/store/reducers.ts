@@ -90,7 +90,8 @@ const initialState: State = {
           'abigail': {rank: 4},
           'vex': {rank: 3},
           'gretchen': {rank: 3},
-          'matilda': {rank: 3}
+          'matilda': {rank: 3},
+          'player': {rank: 1}
         },
         officeOccupants: {
           chieftain: 'shireen',
