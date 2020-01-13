@@ -62,6 +62,7 @@ export interface SaveData {
   motionVotes: {[motionId: string]: {[actorId: string]: {vote: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, reason: string}}};
   currentPhase: number;
   currentPhaseCountdown: number;
+  notifications: {type: string; text: string;}[];
 }
 
 const initialState: State = {
@@ -78,6 +79,7 @@ const initialState: State = {
     motionVotes: {}, // type can be 'motivated', 'bought', 'respect'
     currentVoteOffers: {},
     inspectedMotion: '',
+    notifications: [],
     settlementState: {
       'test': {
         policies: {},
@@ -157,6 +159,14 @@ export function rootReducer(state = initialState, action: any): State {
         default:
           return state;
       }
+    case 'ADD_ALERT':
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          notifications: [...state.saveData.notifications, action.alert]
+        }
+      };
     case 'CHANGE_VOTE':
       const change = action.change;
       const _motionVotes = {...state.saveData.motionVotes};

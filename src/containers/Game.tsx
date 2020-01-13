@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux'
 import { interval, timer } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion } from '../store/actionCreators';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion, addAlert } from '../store/actionCreators';
 import { actors, ActorWithState, ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { State } from '../store/reducers';
 import { Motion } from '../models/motion.model';
@@ -111,6 +111,9 @@ class Game extends React.Component {
           console.log(`All votes for ${motion.name}`, ugh, this.props.motionVotes);
           const votes = this.tallyVotes(ugh);
           console.log(`Final tally for ${motion.name}`, votes);
+          let playerDeets: {purchasedBy: string; amountSpent: number} | undefined;
+          let playerVote: Vote | undefined = undefined;
+          let playerVoteString = '';
           ugh.forEach(vote => {
             if (!!vote.purchaseAgreement) {
               const purchaser = vote.purchaseAgreement.purchasedBy;
@@ -119,8 +122,11 @@ class Game extends React.Component {
               this.props.dispatch(updateActors([{id: vote.actorId, changes: {capital: (this.props.actors.find(x => x.id === vote.actorId)?.state?.capital||0) + amountSpent}}]));
             }
             if (vote.actorId === this.props.player.id) {
+              playerVote = vote;
               const offer = this.getOffers(motion, vote.vote)?.[0];
               if (!!offer?.purchaseAgreement) {
+                playerDeets = offer?.purchaseAgreement;
+                playerVoteString = ` (You voted ${playerVote?.vote})`;
                 const amountSpent = offer.purchaseAgreement.amountSpent || 0;
                 const purchaser = offer.purchaseAgreement.purchasedBy || '';
                 this.props.dispatch(updateActors([{id: purchaser, changes: {capital: (this.props.actors.find(x => x.id === purchaser)?.state?.capital||0) - amountSpent}}]));
@@ -130,8 +136,12 @@ class Game extends React.Component {
           });
           const yea = votes.yea.total;
           const nay = votes.nay.total;
+          const playerEarnings = !!playerDeets ? ` - You were given ${playerDeets?.amountSpent} for your vote` : '';
           if (yea > nay) {
             this.props.dispatch(passMotion(motion));
+            this.props.dispatch(addAlert({type: 'success', text: `${motion.name} passed` + playerVoteString + playerEarnings}));
+          } else {
+            this.props.dispatch(addAlert({type: 'info', text: `${motion.name} did not pass` + playerVoteString + playerEarnings}));
           }
         });
       this.returnToTablePhase();
@@ -352,6 +362,7 @@ const mapStateToProps = (state: State) => {
     currentPhase: state.saveData.currentPhase,
     inspectedMotion: state.saveData.inspectedMotion,
     policies: state.policies,
+    notifications: state.saveData.notifications,
     screen: state.screen,
     availableMotions: state.saveData.availableMotions
   }

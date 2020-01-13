@@ -18,6 +18,11 @@ export const refreshAvailableMotions = () => ({
   type: 'REFRESH_AVAILABLE_MOTIONS'
 });
 
+export const addAlert = (alert: {type: string; text: string;}) => ({
+  type: 'ADD_ALERT',
+  alert
+});
+
 export const inspectMotion = (motion: string) => ({
   type: 'INSPECT_MOTION',
   motion

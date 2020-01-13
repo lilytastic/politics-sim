@@ -23,7 +23,7 @@ class SettlementCircle extends React.Component {
 
   render = () => (
     this.props.actors.map((x, i) => (
-      <div className="mb-3 btn-group-vertical bg-white w-100 rounded actor__wrapper" key={x.id}>
+      <div className="mb-2 btn-group-vertical bg-white w-100 rounded actor__wrapper" key={x.id}>
         <button className="btn btn-outline-dark w-100 text-left">
           <div className="d-flex justify-content-between">
             <div>
@@ -36,6 +36,15 @@ class SettlementCircle extends React.Component {
               <div><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
             </div>
           </div>
+          {/*
+          <div className="d-flex">
+            {x.state.positions.map(position => (
+              <div key={position.stat} style={{ opacity: position.passion / 100.0 }}>
+                <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
+              </div>
+            ))}
+          </div>
+          */}
           {this.props.phase?.id !== 'table' && !!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? (
             <div>
               <div>
@@ -44,25 +53,16 @@ class SettlementCircle extends React.Component {
                     Voted <b style={{ color: getAssociatedVoteColor(this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote || 'abstain') }}>{this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote || 'abstain'}</b>
                   </span>
                 ) : 'Vote pending'}
+                {!!this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement && (
+                  <span>
+                    &nbsp;as a favour to {getById(this.props.actors, this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp;&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.props.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>
+                  </span>
+                )}
               </div>
-              {!!this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement && (
-                <span>
-                  as a favour to {getById(this.props.actors, this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp;&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.props.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>
-                </span>
-              )}
             </div>
           ) : (
-              <div>
-                &nbsp;
-              </div>
+              <div></div>
             )}
-          <div className="d-flex">
-            {x.state.positions.map(position => (
-              <div key={position.stat} style={{ opacity: position.passion / 100.0 }}>
-                <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
-              </div>
-            ))}
-          </div>
         </button>
         {(this.props.phase?.id !== 'table' && x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.props.inspectedMotion)) ? (() => {
           // @ts-ignore;
