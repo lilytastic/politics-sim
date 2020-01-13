@@ -193,7 +193,7 @@ class Game extends React.Component {
     tabledMotions.forEach(motion => {
       const actors = getActorsWithApproval(this.props?.actors, motion);
 
-      actors.filter(x => x.id !== this.props.player.id).forEach((actor, i) => {
+      actors.filter(x => x.voteWeight && x.id !== this.props.player.id).forEach((actor, i) => {
         timer(Math.random() * 9000).subscribe(x => {
           this.props.dispatch(changeVote({
             actorId: actor.id,
@@ -217,7 +217,7 @@ class Game extends React.Component {
     tabledMotions.forEach(motion => {
       const actors = getActorsWithApproval(this.props?.actors, motion);
 
-      actors.filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3).reverse().forEach(actor => {
+      actors.filter(x => x.id !== this.props.player.id && x.voteWeight > 0 && Math.abs(x.approval) > 3).reverse().forEach(actor => {
         const purchaseOptions = actors
           .filter(x => x.id !== motion.tabledBy && x.id !== actor.id && (!!this.props.motionVotes[motion.id, actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
           .shuffle()

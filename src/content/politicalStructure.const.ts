@@ -15,7 +15,7 @@ export const POLITICAL_STRUCTURE_TRIBAL: PoliticalStructure = {
     {name: {basic: 'Friend'}, cost: 1000, voteWeight: 1, softCapitalPerCycle: 100, softCapitalCap: 500},
     {name: {basic: 'Initiate'}, cost: 5000, voteWeight: 2, softCapitalPerCycle: 250, softCapitalCap: 800},
     {name: {masculine: 'Tribesman', feminine: 'Tribesman', basic: 'Tribe Member'}, cost: 10000, voteWeight: 3, softCapitalPerCycle: 400, softCapitalCap: 1500},
-    {name: {masculine: 'Honoured Tribesman', feminine: 'Honoured Tribesman', basic: 'Honoured Tribe Member'}, cost: 25000, voteWeight: 5, softCapitalPerCycle: 800, softCapitalCap: 3500},
+    {name: {masculine: 'Honoured Tribesman', feminine: 'Honoured Tribesman', basic: 'Honoured Tribe Member'}, cost: -1, voteWeight: 5, softCapitalPerCycle: 800, softCapitalCap: 3500},
   ]
 }
 

@@ -34,7 +34,7 @@ export const returnActorWithStateAndOffices = (baseData: ActorBaseData, state: A
   let level = settlement.state.actorPositions[actor.id]?.rank || 0;
   let offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
   offices = [...offices, settlement.state.standardPositions[Math.min(level, settlement.state.standardPositions.length - 1)]];
-  return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
+  return {...actor, offices: offices, voteWeight: offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
 }
 
 export interface PoliticalPosition {

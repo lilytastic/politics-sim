@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatIcon } from '../components/StatIcon';
-import { ActorWithState, returnActorWithState } from '../models/actor.model';
+import { ActorWithState, returnActorWithState, returnActorWithStateAndOffices } from '../models/actor.model';
 import { getById } from '../helpers/entity.helpers';
 import { State } from '../store/reducers';
 import { changeVote, inspectMotion, tableMotion, updateActors, rescindMotion } from '../store/actionCreators';
@@ -81,8 +81,8 @@ class SettlementMotions extends React.Component {
           .filter(motion => this.props.phase?.id === 'table' || !!motion.onTable)
           .map(motion => (
         <div key={motion.id}
-            className={`text-left motion__wrapper motion__wrapper--${this.props.phase?.id !== 'vote' ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'} btn-group-vertical mb-3 w-100 bg-light rounded` + (this.props.inspectedMotion === motion.id && ' motion__wrapper--active')}>
-          <button className="w-100 btn btn-outline-dark border-bottom-0 p-2 px-3"
+            className={`text-left btn-group-vertical motion__wrapper motion__wrapper--${this.props.phase?.id !== 'vote' ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'} btn-group-vertical mb-3 w-100 bg-light rounded` + (this.props.inspectedMotion === motion.id && ' motion__wrapper--active')}>
+          <button className={`w-100 btn btn-outline-dark text-left p-2 px-3`}
               onClick={() => this.props.dispatch(inspectMotion(motion.id))}>
             <MotionInfo motion={motion}
                 mode={this.props.phase?.id}
@@ -98,7 +98,7 @@ class SettlementMotions extends React.Component {
               }
             </MotionInfo>
           </button>
-          {this.props.phase?.id !== 'table' ? (
+          {(this.props.phase?.id === 'vote' && this.props.player?.voteWeight > 0) && (
             <div className="btn-group w-100">
               {returnStandardVotes().map(def => (
                 <button key={def.key} style={{borderTopLeftRadius: 0}}
@@ -115,8 +115,9 @@ class SettlementMotions extends React.Component {
                 </button>
               ))}
             </div>
-          ) : (
-            <div className="w-100">
+          )}
+          {this.props.phase?.id === 'table' && (
+            <div className="btn-group w-100">
               <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
                   disabled={(!motion.onTable && this.props.player.state.capital < motion.costToTable) || (!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id))}
                   className={"btn btn-block w-100 " + (!!motion.onTable ? "btn-outline-danger" : "btn-outline-primary")}
@@ -136,10 +137,9 @@ class SettlementMotions extends React.Component {
 const mapStateToProps = (state: State) => {
   const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
 
-  const actors = state.actors.map(x => ({...returnActorWithState(x, state.saveData.actorState[x.id])})).map(actor => {
-    const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
-    return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
-  }).sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
+  const actors = state.actors
+    .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
+    .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
 
   return {
     actors: actors,
