@@ -18,6 +18,10 @@ export interface ActorWithStateAndOffices extends ActorWithState {
   offices: PoliticalOffice[];
 }
 
+export interface ActorPoliticalStatus {
+  rank: number;
+}
+
 export const returnActorWithState = (baseData: ActorBaseData, state: ActorState | null | undefined): ActorWithState => {
   return {
     ...baseData,
@@ -27,7 +31,9 @@ export const returnActorWithState = (baseData: ActorBaseData, state: ActorState 
 
 export const returnActorWithStateAndOffices = (baseData: ActorBaseData, state: ActorState | null | undefined, settlement: SettlementWithState): ActorWithStateAndOffices => {
   const actor = returnActorWithState(baseData, state);
-  const offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
+  let level = settlement.state.actorPositions[actor.id]?.rank || 0;
+  let offices = Object.keys(settlement.state.officeOccupants).filter(x => settlement.state.officeOccupants[x] === actor.id).map(x => settlement.state.offices[x]);
+  offices = [...offices, settlement.state.standardPositions[Math.min(level, settlement.state.standardPositions.length - 1)]];
   return {...actor, offices: offices, voteWeight: 1 + offices.reduce((acc, curr) => acc + curr.voteWeight, 0)};
 }
 

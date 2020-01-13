@@ -314,19 +314,24 @@ class Game extends React.Component {
 
   render = () => (
     <div className="p-5 content">
+      <div>
+        {false && this.props?.notifications.map((x, i) => (
+          <div className={`alert alert-${x.type}`}>{x.text}</div>
+        ))}
+      </div>
       <div className={"fade--full" + (!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) && ' active')}></div>
       <h2>Profile</h2>
       <SettlementProfile settlement={this.props.currentSettlement} policies={this.props.policies}></SettlementProfile>
       <CurrentPhase></CurrentPhase>
       <h2 className="mt-5">Politics</h2>
       <div className="row">
-        <div className="col-6">
+        <div className="col-5 border-right">
+          <h3 className="mb-3">&nbsp;</h3>
+          <SettlementCircle></SettlementCircle>
+        </div>
+        <div className="col-7">
           <h3 className="mb-3">{this.props.phase?.id === 'table' ? 'Opportunities' : 'Measures'}</h3>
           <SettlementMotions></SettlementMotions>
-        </div>
-        <div className="col-6 border-left">
-          <h3 className="mb-3">Circle</h3>
-          <SettlementCircle></SettlementCircle>
         </div>
       </div>
     </div>

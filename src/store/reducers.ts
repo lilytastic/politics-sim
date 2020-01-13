@@ -83,7 +83,15 @@ const initialState: State = {
     settlementState: {
       'test': {
         policies: {},
-        offices: POLITICAL_STRUCTURE_TRIBAL.offices,
+        history: [],
+        ...POLITICAL_STRUCTURE_TRIBAL,
+        actorPositions: {
+          'shireen': {rank: 4},
+          'abigail': {rank: 4},
+          'vex': {rank: 3},
+          'gretchen': {rank: 3},
+          'matilda': {rank: 3}
+        },
         officeOccupants: {
           chieftain: 'shireen',
           elder: 'abigail',

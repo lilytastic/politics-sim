@@ -25,15 +25,15 @@ class SettlementCircle extends React.Component {
     this.props.actors.map((x, i) => (
       <div className="mb-2 btn-group-vertical bg-white w-100 rounded actor__wrapper" key={x.id}>
         <button className="btn btn-outline-dark w-100 text-left">
-          <div className="d-flex justify-content-between">
-            <div>
+          <div className="row">
+            <div className="col">
               <b>{x.name}</b>
-              {x.offices.length > 0 && (x.offices.map(office => ', ' + office.name.basic))}
+              {x.offices.length > 0 && (', ' + ((x.gender === 'm' ? x.offices[0].name.masculine : x.offices[0].name.feminine) || x.offices[0].name.basic))}
               {x.id === this.props.player.id && (<span>&nbsp;(You)</span>)}
             </div>
-            <div className="d-flex">
-              <div style={{ minWidth: '60px' }}><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
-              <div><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
+            <div className="col row mr-0 justify-content-end">
+              <div className="col-6"><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
+              <div className="col-4"><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
             </div>
           </div>
           {/*
@@ -73,10 +73,10 @@ class SettlementCircle extends React.Component {
             <div className="btn-group w-100">
               {[{ key: 'yea', color: 'success' }, { key: 'abstain', color: 'secondary' }, { key: 'nay', color: 'danger' }].map(key => (
                 <button key={key.key}
-                    className={`btn btn-${(this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote === key.key) ? '' : 'outline-'}${key.color} w-100`}
+                    className={`d-flex align-items-center px-0 justify-content-center btn btn-${(this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote === key.key) ? '' : 'outline-'}${key.color} w-100`}
                     disabled={this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote === key.key || this.props.player.state.capital < Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]) || this.props.motionsTabled.find(y => y.id === this.props.inspectedMotion)?.tabledBy === x.id}
                     onClick={() => this.makeOffer(x.id, this.props.inspectedMotion, key.key, Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key]))}>
-                  {key.key} <StatIcon stat='capital' value={Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key])}></StatIcon>
+                  {key.key}&nbsp;&nbsp;<span className="small"><StatIcon stat='capital' value={Math.max(!!currentOffer ? (currentOffer?.amountSpent + 100) : 0, costToInfluence[key.key])}></StatIcon></span>
                 </button>
               ))}
             </div>
@@ -96,6 +96,7 @@ const mapStateToProps = (state: State) => {
 
   return {
     actors: actors,
+    settlement: settlement,
     phase: state.phases[state.saveData.currentPhase || 0],
     player: actors.find((x: any) => x.id === 'player') || actors[0],
     motionsTabled: state.saveData.motionsTabled,
