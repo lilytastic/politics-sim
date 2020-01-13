@@ -6,7 +6,7 @@
 		"stances": {
 			"mandatory": {
 				"label": "Mandatory",
-				"effects": [{"stat": "joy", "amount": -10}, {"stat": "vigilance", "amount": 15}]
+				"effects": [{"stat": "joy", "amount": -10}, {"stat": "openness", "amount": -15}]
 			}
 		}
 	},
@@ -16,11 +16,11 @@
 		"stances": {
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "dignity", "amount": 10}]
+				"effects": [{"stat": "dignity", "amount": 10}, {"stat": "openness", "amount": 10}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "dignity", "amount": -10}, {"stat": "threat", "amount": -10}]
+				"effects": [{"stat": "dignity", "amount": -10}, {"stat": "openness", "amount": -10}]
 			}
 		}
 	},
@@ -31,11 +31,11 @@
 		"stances": {
 			"subsidized": {
 				"label": "Subsidized",
-				"effects": [{"stat": "ignorance", "amount": -10}]
+				"effects": [{"stat": "education", "amount": 10}]
 			},
 			"restricted": {
 				"label": "Restricted",
-				"effects": [{"stat": "ignorance", "amount": 10}, {"stat": "dignity", "amount": -15}]
+				"effects": [{"stat": "education", "amount": -10}, {"stat": "dignity", "amount": -15}]
 			}
 		}
 	},
@@ -46,11 +46,11 @@
 		"stances": {
 			"permitted": {
 				"label": "Policy",
-				"effects": [{"stat": "purpose", "amount": 5}, {"stat": "ignorance", "amount": 20}]
+				"effects": [{"stat": "purpose", "amount": 5}, {"stat": "creativity", "amount": -20}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "purpose", "amount": -15}, {"stat": "ignorance", "amount": -15}]
+				"effects": [{"stat": "purpose", "amount": -15}, {"stat": "creativity", "amount": 15}]
 			}
 		}
 	},
@@ -76,15 +76,15 @@
 		"stances": {
 			"blessed": {
 				"label": "Blessed",
-				"effects": [{"stat": "poverty", "amount": -15}, {"stat": "dignity", "amount": -25}, {"stat": "purpose", "amount": 20}]
+				"effects": [{"stat": "charity", "amount": -15}, {"stat": "dignity", "amount": -25}, {"stat": "purpose", "amount": 10}]
 			},
 			"permitted": {
 				"label": "Permitted",
-				"effects": [{"stat": "poverty", "amount": -10}, {"stat": "dignity", "amount": -10}]
+				"effects": [{"stat": "charity", "amount": -10}, {"stat": "dignity", "amount": -10}]
 			},
 			"outlawed": {
 				"label": "Outlawed",
-				"effects": [{"stat": "poverty", "amount": 10}, {"stat": "dignity", "amount": 30}]
+				"effects": [{"stat": "charity", "amount": 10}, {"stat": "dignity", "amount": 30}]
 			}
 		}
 	},
@@ -95,11 +95,11 @@
 		"stances": {
 			"enshrined": {
 				"label": "Enshrined",
-				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "purpose", "amount": 10}]
+				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "creativity", "amount": 10}]
 			},
 			"encouraged": {
 				"label": "Encouraged",
-				"effects": [{"stat": "vigilance", "amount": 10}, {"stat": "purpose", "amount": 5}]
+				"effects": [{"stat": "vigilance", "amount": 10}, {"stat": "creativity", "amount": 5}]
 			}
 		}
 	},

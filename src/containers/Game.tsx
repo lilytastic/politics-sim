@@ -42,7 +42,7 @@ class Game extends React.Component {
       this.props.dispatch(tableMotion(motionId, actor.id));
       this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
-    } else if (!!tabled && tabled.tabledBy === actor.id) {
+    } else if (!!tabled && actor.id === this.props.player.id && tabled.tabledBy === actor.id) {
       this.props.dispatch(rescindMotion(motionId));
       this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
@@ -224,7 +224,7 @@ class Game extends React.Component {
           const actorsToBuyFrom = actors
             .filter(x => x.id !== motion.tabledBy && x.voteWeight > 0 && x.id !== actor.id && (!!this.props.motionVotes[motion.id, actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
             .shuffle()
-            .sort((a, b) => a.costToInfluence[actor.position] > b.costToInfluence[actor.position] ? 1 : -1);
+            .sort((a, b) => a.costToInfluence[actor.position] < b.costToInfluence[actor.position] ? 1 : -1);
       
           const votes = this.tallyVotesFromEntity(this.props?.motionVotes[motion.id]);
           const votesNeeded =
@@ -234,7 +234,7 @@ class Game extends React.Component {
       
           // Actor cares enough to buy this many votes from other actors.
           const votesToBuy = votesNeeded + 1 + Math.abs(actor.approval / 10);
-          const amountToSpend = (actor.state.capital / 2); // TODO: Base off approval -- more passion, more $$$
+          const amountToSpend = actor.id === motion.tabledBy ? actor.state.capital : (actor.state.capital / 2); // TODO: Base off approval -- more passion, more $$$
           console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes, wants ${votesToBuy}`, actorsToBuyFrom);
       
           let votesBought = 0;
@@ -249,12 +249,12 @@ class Game extends React.Component {
                 return;
               }
               let amountToSpendOnOffer = actorToBuyFrom.costToInfluence[actor.position];
-              const existingOffers = [...(this.props?.currentVoteOffers[actorToBuyFrom.id] || []), ...(offers[actorToBuyFrom.id] || [])];
+              const existingOffers = [...(this.props?.currentVoteOffers[actorToBuyFrom.id] || []), ...(offers[actorToBuyFrom.id] || [])].filter(x => x.motionId === motion.id);
               if (existingOffers.length) {
                 // Make sure to go above the existing offer
                 amountToSpendOnOffer = Math.max(
                   amountToSpendOnOffer,
-                  Math.max(...existingOffers.filter(x => x.motionId === x.motionId && x.vote !== actor.position).map(x => x.purchaseAgreement?.amountSpent || 0)) + 100
+                  Math.max(...existingOffers.filter(x => x.vote !== actor.position).map(x => x.purchaseAgreement?.amountSpent || 0)) + 100
                 );
               }
               amountToSpendOnOffer = Math.round(amountToSpendOnOffer);
@@ -299,7 +299,7 @@ class Game extends React.Component {
         .filter(x => this.props.player.id !== x.id && motion.tabledBy !== x.id)
         .forEach((actor, i) => {
           timer(Math.random() * 9000).subscribe(x => {
-            let existingVote = this.props.motionVotes[motion.id][actor.id];
+            let existingVote = this.props.motionVotes[motion.id]?.[actor.id];
             if (!!existingVote?.purchaseAgreement) {
               return;
             }
@@ -346,7 +346,7 @@ class Game extends React.Component {
 
 const mapStateToProps = (state: State) => {
   const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
-  const profile: {[id: string]: number} = {purpose: 0, joy: 0, education: 0, vigilance: 0, dignity: 0, poverty: 0, ignorance: 0, threat: 0};
+  const profile: {[id: string]: number} = {purpose: 0, joy: 0, education: 0, vigilance: 0, dignity: 0, charity: 0, creativity: 0, openness: 0};
   Object.keys(settlement.state.policies).forEach(policyId => {
     const stance = settlement.state.policies[policyId];
     state.policies.find(x => x.id === policyId)?.stances[stance].effects.forEach(effect => {

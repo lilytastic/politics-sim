@@ -21,13 +21,13 @@ export const stats: {[id: string]: Stat} = {
   },
   'joy': {
     label: 'Pleasure',
-    opposed: 'poverty',
+    opposed: 'charity',
     icon: 'glass-cheers',
     color: 'darkorange'
   },
   'education': {
     label: 'Education',
-    opposed: 'ignorance',
+    opposed: 'creativity',
     icon: 'book',
     color: 'cadetblue'
   },
@@ -39,7 +39,7 @@ export const stats: {[id: string]: Stat} = {
   },
   'vigilance': {
     label: 'Vigilance',
-    opposed: 'threat',
+    opposed: 'openness',
     icon: 'shield-alt',
     color: 'ROYALBLUE'
   },
@@ -47,29 +47,25 @@ export const stats: {[id: string]: Stat} = {
     label: 'Dignity',
     color: 'INDIANRED',
     opposed: 'purpose',
-    description: `Our people are empowered, free-thinking, and disobedient.`,
     icon: 'fist-raised'
   },
-  'poverty': {
-    label: 'Squalor',
-    color: 'darkgoldenrod',
+  'charity': {
+    label: 'Charity',
+    color: 'goldenrod',
     opposed: 'joy',
-    description: `The people wallow in poverty and debt, easy prey for criminals and slavers.`,
-    icon: 'balance-scale-right'
+    icon: 'hands-helping'
   },
-  'ignorance': {
-    label: 'Ignorance',
-    color: 'silver',
+  'creativity': {
+    label: 'Creativity',
+    color: 'sandybrown',
     opposed: 'education',
-    description: `People have given themselves over to lies, stubbornness, and outright stupidity.`,
-    icon: 'eye-slash'
+    icon: 'palette'
   },
-  'threat': {
-    label: 'Danger',
-    color: '#CA2E2E',
+  'openness': {
+    label: 'Openness',
+    color: 'grey',
     opposed: 'vigilance',
-    description: `Our enemies are gathering, inside and out.`,
-    icon: 'crosshairs'
+    icon: 'dove'
   },
   'votes': {
     label: 'Votes',

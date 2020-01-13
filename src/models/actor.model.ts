@@ -64,8 +64,8 @@ export const actors: ActorWithState[] = [
           passion: 50
         },
         {
-          stat: 'purpose',
-          attitude: 'lower',
+          stat: 'dignity',
+          attitude: 'raise',
           passion: 50
         }
       ]
@@ -103,7 +103,7 @@ export const actors: ActorWithState[] = [
         },
         {
           stat: 'education',
-          attitude: 'lower',
+          attitude: 'raise',
           passion: 50
         }
       ]
@@ -116,8 +116,8 @@ export const actors: ActorWithState[] = [
     state: {
       positions: [
         {
-          stat: 'vigilance',
-          attitude: 'lower',
+          stat: 'openness',
+          attitude: 'raise',
           passion: 50
         },
         {
@@ -135,8 +135,8 @@ export const actors: ActorWithState[] = [
     state: {
       positions: [
         {
-          stat: 'purpose',
-          attitude: 'lower',
+          stat: 'dignity',
+          attitude: 'raise',
           passion: 50
         },
         {
@@ -154,8 +154,8 @@ export const actors: ActorWithState[] = [
     state: {
       positions: [
         {
-          stat: 'joy',
-          attitude: 'lower',
+          stat: 'charity',
+          attitude: 'raise',
           passion: 50
         },
         {

@@ -38,7 +38,7 @@ class SettlementCircle extends React.Component {
                 <div className="col-4"><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
               </div>
             </div>
-            {/*
+            {
             <div className="d-flex">
               {x.state.positions.map(position => (
                 <div key={position.stat} style={{ opacity: position.passion / 100.0 }}>
@@ -46,7 +46,7 @@ class SettlementCircle extends React.Component {
                 </div>
               ))}
             </div>
-            */}
+            }
             {this.props.phase?.id !== 'table' && !!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? (
               <div>
                 <div>

@@ -23,6 +23,11 @@ export const addAlert = (alert: {type: string; text: string;}) => ({
   alert
 });
 
+export const passTime = (time: number) => ({
+  type: 'PASS_TIME',
+  time
+});
+
 export const inspectMotion = (motion: string) => ({
   type: 'INSPECT_MOTION',
   motion

@@ -62,6 +62,7 @@ export interface SaveData {
   motionVotes: {[motionId: string]: {[actorId: string]: {vote: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, reason: string}}};
   currentPhase: number;
   currentPhaseCountdown: number;
+  timePassed: number;
   notifications: {type: string; text: string;}[];
 }
 
@@ -80,6 +81,7 @@ const initialState: State = {
     currentVoteOffers: {},
     inspectedMotion: '',
     notifications: [],
+    timePassed: 0,
     settlementState: {
       'test': {
         policies: {},
@@ -108,10 +110,19 @@ const initialState: State = {
 };
 
 export function rootReducer(state = initialState, action: any): State {
-  if (action.type !== 'CHANGE_CURRENT_PHASE_COUNTDOWN') {
+  const ignoredTypes = ['PASS_TIME', 'CHANGE_VOTE', 'CHANGE_CURRENT_PHASE_COUNTDOWN'];
+  if (ignoredTypes.indexOf(action.type) === -1) {
     console.log(action);
   }
   switch (action.type) {
+    case 'PASS_TIME':
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          timePassed: (state.saveData.timePassed || 0) + action.time
+        }
+      };
     case 'LOAD_ACTORS':
       const newState = action.actors.map((x: ActorWithState) => ({...state.saveData.actorState, ...x.state, id: x.id})).toEntities(false);
       return {
@@ -139,7 +150,12 @@ export function rootReducer(state = initialState, action: any): State {
               const currentState = state.saveData.settlementState[key];
               const newPolicies = {...currentState.policies};
               newPolicies[action.motion.change.payload.policyId] = action.motion.change.payload.stanceId;
-              return {...state.saveData.settlementState[key], id: key, policies: newPolicies};
+              return {
+                ...state.saveData.settlementState[key],
+                id: key,
+                history: [...currentState.history, {...action.motion.change.payload, time: state.saveData.timePassed}],
+                policies: newPolicies
+              };
             });
           console.log(settlementState, settlementState.toEntities());
           return {
