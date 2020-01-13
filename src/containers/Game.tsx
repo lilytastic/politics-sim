@@ -213,70 +213,76 @@ class Game extends React.Component {
       .map(motion => ({...motion, tabledBy: getById(this.props.motionsTabled, motion.id)?.tabledBy}))
       .filter(motion => !!motion.tabledBy)
 
-    // Now they make offers!
     tabledMotions.forEach(motion => {
-      const actors = getActorsWithApproval(this.props?.actors, motion);
+      // This is all the AI actors who are passionately involved and willing to make offers
+      getActorsWithApproval(this.props?.actors, motion)
+        .filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3)
+        .reverse()
+        .forEach(actor => {
+          const actors = getActorsWithApproval(this.props?.actors, motion);
 
-      actors.filter(x => x.id !== this.props.player.id && x.voteWeight > 0 && Math.abs(x.approval) > 3).reverse().forEach(actor => {
-        const purchaseOptions = actors
-          .filter(x => x.id !== motion.tabledBy && x.id !== actor.id && (!!this.props.motionVotes[motion.id, actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
-          .shuffle()
-          .sort((a, b) => a.costToInfluence[actor.position] > b.costToInfluence[actor.position] ? 1 : -1);
-
-        // Actor cares enough to buy votes from other actors.
-        const votes = this.tallyVotesFromEntity(this.props.motionVotes[motion.id]);
-        const votesNeeded =
-          actor.position === 'yea' ? votes.nay.total - votes.yea.total :
-          actor.position === 'nay' ? votes.yea.total - votes.nay.total :
-          0;
-        const votesToBuy = votesNeeded + 1 + Math.abs(actor.approval / 10);
-        let votesBought = 0;
-        console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes, wants ${votesToBuy}`, purchaseOptions);
-
-        let capital = actor.state.capital;
-        const amountToSpend = (capital / 2);
-        let amountSpentSoFar = 0;
-        purchaseOptions
-          .map(_actor => ({..._actor, existingVote: this.props.motionVotes[motion.id][_actor.id]}))
-          .filter(x => x.costToInfluence[actor.position] <= amountToSpend - amountSpentSoFar)
-          .forEach((_actor, i) => {
-            if (votesBought >= votesToBuy || amountSpentSoFar >= amountToSpend) {
-              return;
-            }
-            const costToInfluence = _actor.costToInfluence;
-            const amountSpent = Math.max(costToInfluence[actor.position], Math.round((amountToSpend - amountSpentSoFar) / (purchaseOptions.length - 1)));
-
-            const boughtVote: Vote = {
-              actorId: _actor.id,
-              motionId: motion.id,
-              reason: 'bought',
-              purchaseAgreement: {
-                purchasedBy: actor.id,
-                amountSpent: amountSpent
-              },
-              vote: actor.position
-            };
-            if (capital >= amountSpent) {
-              let bought = false;
-              if (!!_actor.existingVote && _actor.existingVote.reason !== 'bought') {
-                // Can't buy from someone who's already been bought
-                bought = true;
-              } else if (!_actor.existingVote) {
-                bought = true;
+          const actorsToBuyFrom = actors
+            .filter(x => x.id !== motion.tabledBy && x.voteWeight > 0 && x.id !== actor.id && (!!this.props.motionVotes[motion.id, actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
+            .shuffle()
+            .sort((a, b) => a.costToInfluence[actor.position] > b.costToInfluence[actor.position] ? 1 : -1);
+      
+          const votes = this.tallyVotesFromEntity(this.props?.motionVotes[motion.id]);
+          const votesNeeded =
+            actor.position === 'yea' ? votes.nay.total - votes.yea.total :
+            actor.position === 'nay' ? votes.yea.total - votes.nay.total :
+            0;
+      
+          // Actor cares enough to buy this many votes from other actors.
+          const votesToBuy = votesNeeded + 1 + Math.abs(actor.approval / 10);
+          const amountToSpend = (actor.state.capital / 2); // TODO: Base off approval -- more passion, more $$$
+          console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes, wants ${votesToBuy}`, actorsToBuyFrom);
+      
+          let votesBought = 0;
+          let capital = actor.state.capital;
+          let amountSpentSoFar = 0;
+          actorsToBuyFrom
+            .map(_actor => ({..._actor, existingVote: this.props.motionVotes[motion.id][_actor.id]}))
+            .filter(x => x.costToInfluence[actor.position] <= amountToSpend - amountSpentSoFar)
+            .forEach(actorToBuyFrom => {
+              if (votesBought >= votesToBuy) {
+                // If we have all our votes, time to stop.
+                return;
               }
-
-              if (bought) {
-                offers[_actor.id] = offers[_actor.id] || [];
-                offers[_actor.id].push(boughtVote);
-                votesBought += _actor.voteWeight;
-                capital -= amountSpent;
-                amountSpentSoFar += amountSpent;
-                console.log(`${actor.name} wants to buy ${boughtVote.vote} vote from ${_actor.name} for ${amountSpent}`);
+              let amountToSpendOnOffer = actorToBuyFrom.costToInfluence[actor.position];
+              const existingOffers = [...(this.props?.currentVoteOffers[actorToBuyFrom.id] || []), ...(offers[actorToBuyFrom.id] || [])];
+              if (existingOffers.length) {
+                // Make sure to go above the existing offer
+                amountToSpendOnOffer = Math.max(
+                  amountToSpendOnOffer,
+                  Math.max(...existingOffers.filter(x => x.motionId === x.motionId && x.vote !== actor.position).map(x => x.purchaseAgreement?.amountSpent || 0)) + 100
+                );
               }
-            }
-          });
+              amountToSpendOnOffer = Math.round(amountToSpendOnOffer);
+              if (amountSpentSoFar + amountToSpendOnOffer > amountToSpend) {
+                // If it's too costly, forget it
+                return;
+              }
+              const offer: Vote = {
+                actorId: actorToBuyFrom.id,
+                motionId: motion.id,
+                reason: 'bought',
+                purchaseAgreement: {
+                  purchasedBy: actor.id,
+                  amountSpent: amountToSpendOnOffer
+                },
+                vote: actor.position
+              };
+              if (capital >= (offer.purchaseAgreement?.amountSpent || 0)) {
+                console.log(`${actor.name} wants to buy ${offer.vote} vote from ${actorToBuyFrom.name} for ${amountToSpendOnOffer}`);
+                offers[offer.actorId] = offers[offer.actorId] || [];
+                offers[offer.actorId].push(offer);
+                votesBought += actorToBuyFrom.voteWeight;
+                capital -= offer.purchaseAgreement?.amountSpent || 0;
+                amountSpentSoFar += offer.purchaseAgreement?.amountSpent || 0;
+              }
+            });
         });
-      });
+    });
 
     console.log('Offers have been extended', offers);
     this.props.dispatch(setOffers(offers));
