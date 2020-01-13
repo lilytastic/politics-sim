@@ -40,17 +40,36 @@
 		}
 	},
 	{
+		"id": "religious_education",
+		"label": "Religious Education",
+		"canBeRepealed": true,
+		"stances": {
+			"subsidized": {
+				"label": "Mandatory",
+				"effects": [{"stat": "education", "amount": -10}, {"stat": "purpose", "amount": 15}]
+			},
+			"permitted": {
+				"label": "Permitted",
+				"effects": [{"stat": "education", "amount": -5}, {"stat": "purpose", "amount": 5}]
+			},
+			"forbidden": {
+				"label": "Forbidden",
+				"effects": [{"stat": "education", "amount": 10}, {"stat": "purpose", "amount": -15}]
+			}
+		}
+	},
+	{
 		"id": "censorship",
 		"label": "Censorship",
 		"canBeRepealed": true,
 		"stances": {
 			"permitted": {
 				"label": "Policy",
-				"effects": [{"stat": "purpose", "amount": 5}, {"stat": "creativity", "amount": -20}]
+				"effects": [{"stat": "purpose", "amount": 5}, {"stat": "education", "amount": -20}, {"stat": "creativity", "amount": -20}]
 			},
 			"forbidden": {
 				"label": "Forbidden",
-				"effects": [{"stat": "purpose", "amount": -15}, {"stat": "creativity", "amount": 15}]
+				"effects": [{"stat": "purpose", "amount": -15}, {"stat": "education", "amount": 10}, {"stat": "creativity", "amount": 15}]
 			}
 		}
 	},

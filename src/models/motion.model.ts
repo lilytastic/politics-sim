@@ -3,5 +3,6 @@ export interface Motion {
 	name: string;
 	change: {type: string; payload: any};
 	costToTable: number;
+	rewardForPassing: number;
 	effects: { stat: string, amount: number }[];
 }

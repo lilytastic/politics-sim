@@ -49,23 +49,6 @@ class Game extends React.Component {
     }
   };
 
-  returnToTablePhase = () => {
-    this.grantAllowance();
-    this.props.dispatch(refreshAvailableMotions());
-    timer(5000).subscribe(() => {
-      this.props?.actors
-        .filter((x: ActorWithState) => x.id !== this.props.player.id)
-        .forEach((actor: ActorWithState) => {
-          this.props.availableMotions.forEach((motion: Motion) => {
-            const approval = getActorApproval(actor, motion);
-            if (approval > 2.5) {
-              this.table(motion.id, actor.id);
-            }
-          });
-        });
-    });
-  }
-
   grantAllowance = () => {
     this.props.dispatch(updateActors((this.props.actors||[]).map(actor => {
       const softCap = actor.offices.length ? Math.max(...actor.offices.map(x => x.softCapitalCap)) : 0;
@@ -98,53 +81,55 @@ class Game extends React.Component {
 
   advancePhase = () => {
     const currentPhase = this.props.phase;
-    if (currentPhase?.id === 'table' && !this.props.motionsTabled.length) {
-      this.props.dispatch(changeCurrentPhaseCountdown(0));
-      this.returnToTablePhase();
-      return;
-    }
-    if (currentPhase?.id === 'vote') {
-      this.props.availableMotions
-        .filter((motion: Motion) => !!getById(this.props.motionsTabled, motion.id))
-        .forEach((motion: Motion) => {
-          const ugh: Vote[] = this.props.actors?.reduce((acc: Vote[], curr) => ([...acc, this.getVote(motion.id, curr.id)]), []);
-          console.log(`All votes for ${motion.name}`, ugh, this.props.motionVotes);
-          const votes = this.tallyVotes(ugh);
-          console.log(`Final tally for ${motion.name}`, votes);
-          let playerDeets: {purchasedBy: string; amountSpent: number} | undefined;
-          let playerVote: Vote | undefined = undefined;
-          let playerVoteString = '';
-          ugh.forEach(vote => {
-            if (!!vote.purchaseAgreement) {
-              const purchaser = vote.purchaseAgreement.purchasedBy;
-              const amountSpent = vote.purchaseAgreement.amountSpent;
-              this.props.dispatch(updateActors([{id: purchaser, changes: {capital: (this.props.actors.find(x => x.id === purchaser)?.state?.capital||0) - amountSpent}}]));
-              this.props.dispatch(updateActors([{id: vote.actorId, changes: {capital: (this.props.actors.find(x => x.id === vote.actorId)?.state?.capital||0) + amountSpent}}]));
-            }
-            if (vote.actorId === this.props.player.id) {
-              playerVote = vote;
-              const offer = this.getOffers(motion, vote.vote)?.[0];
-              if (!!offer?.purchaseAgreement) {
-                playerDeets = offer?.purchaseAgreement;
-                playerVoteString = ` (You voted ${playerVote?.vote})`;
-                const amountSpent = offer.purchaseAgreement.amountSpent || 0;
-                const purchaser = offer.purchaseAgreement.purchasedBy || '';
+    switch (currentPhase?.id) {
+      case 'table':
+        if (!this.props.motionsTabled.length) {
+          this.props.dispatch(changeCurrentPhaseCountdown(0));
+        }
+        break;
+      case 'vote':
+        this.props.availableMotions
+          .filter((motion: Motion) => !!getById(this.props.motionsTabled, motion.id))
+          .forEach((motion: Motion) => {
+            const ugh: Vote[] = this.props.actors?.reduce((acc: Vote[], curr) => ([...acc, this.getVote(motion.id, curr.id)]), []);
+            console.log(`All votes for ${motion.name}`, ugh, this.props.motionVotes);
+            const votes = this.tallyVotes(ugh);
+            console.log(`Final tally for ${motion.name}`, votes);
+            let playerDeets: {purchasedBy: string; amountSpent: number} | undefined;
+            let playerVote: Vote | undefined = undefined;
+            let playerVoteString = '';
+            ugh.forEach(vote => {
+              if (!!vote.purchaseAgreement) {
+                const purchaser = vote.purchaseAgreement.purchasedBy;
+                const amountSpent = vote.purchaseAgreement.amountSpent;
                 this.props.dispatch(updateActors([{id: purchaser, changes: {capital: (this.props.actors.find(x => x.id === purchaser)?.state?.capital||0) - amountSpent}}]));
                 this.props.dispatch(updateActors([{id: vote.actorId, changes: {capital: (this.props.actors.find(x => x.id === vote.actorId)?.state?.capital||0) + amountSpent}}]));
               }
+              if (vote.actorId === this.props.player.id) {
+                playerVote = vote;
+                const offer = this.getOffers(motion, vote.vote)?.[0];
+                if (!!offer?.purchaseAgreement) {
+                  playerDeets = offer?.purchaseAgreement;
+                  playerVoteString = ` (You voted ${playerVote?.vote})`;
+                  const amountSpent = offer.purchaseAgreement.amountSpent || 0;
+                  const purchaser = offer.purchaseAgreement.purchasedBy || '';
+                  this.props.dispatch(updateActors([{id: purchaser, changes: {capital: (this.props.actors.find(x => x.id === purchaser)?.state?.capital||0) - amountSpent}}]));
+                  this.props.dispatch(updateActors([{id: vote.actorId, changes: {capital: (this.props.actors.find(x => x.id === vote.actorId)?.state?.capital||0) + amountSpent}}]));
+                }
+              }
+            });
+            const yea = votes.yea.total;
+            const nay = votes.nay.total;
+            const playerEarnings = !!playerDeets ? ` - You were given ${playerDeets?.amountSpent} for your vote` : '';
+            if (yea > nay) {
+              this.props.dispatch(passMotion(motion));
+              this.props.dispatch(addAlert({type: 'success', text: `${motion.name} passed` + playerVoteString + playerEarnings}));
+            } else {
+              this.props.dispatch(addAlert({type: 'info', text: `${motion.name} did not pass` + playerVoteString + playerEarnings}));
             }
           });
-          const yea = votes.yea.total;
-          const nay = votes.nay.total;
-          const playerEarnings = !!playerDeets ? ` - You were given ${playerDeets?.amountSpent} for your vote` : '';
-          if (yea > nay) {
-            this.props.dispatch(passMotion(motion));
-            this.props.dispatch(addAlert({type: 'success', text: `${motion.name} passed` + playerVoteString + playerEarnings}));
-          } else {
-            this.props.dispatch(addAlert({type: 'info', text: `${motion.name} did not pass` + playerVoteString + playerEarnings}));
-          }
-        });
-      this.returnToTablePhase();
+
+        break;
     }
     this.props.dispatch(changeCurrentPhase((this.props.currentPhase + 1) % this.props.phases.length));
 
@@ -155,6 +140,25 @@ class Game extends React.Component {
     if (newPhase?.id === 'vote') {
       this.actorsVote();
     }
+  }
+
+  returnToTablePhase = () => {
+    this.grantAllowance();
+    this.props.dispatch(refreshAvailableMotions());
+    timer(5000).subscribe(() => {
+      this.props?.actors
+        .filter(x => x.id !== this.props.player.id)
+        .forEach((actor, i) => {
+          interval(Math.random() * 15000).subscribe(() => {
+            this.props.availableMotions.forEach((motion: Motion) => {
+              const approval = getActorApproval(actor, motion);
+              if (approval > 2.5) {
+                this.table(motion.id, actor.id);
+              }
+            });
+          })
+        });
+    });
   }
 
   tallyVotes = (votes: Vote[]) => {
@@ -231,12 +235,14 @@ class Game extends React.Component {
             actor.position === 'yea' ? votes.nay.total - votes.yea.total :
             actor.position === 'nay' ? votes.yea.total - votes.nay.total :
             0;
-      
+
           // Actor cares enough to buy this many votes from other actors.
-          const votesToBuy = votesNeeded + 1 + Math.abs(actor.approval / 10);
+          const votesToBuy = ((votesNeeded + 1) * 1.33) + 1 + Math.abs(actor.approval / 10);
           const amountToSpend = actor.id === motion.tabledBy ? actor.state.capital : (actor.state.capital / 2); // TODO: Base off approval -- more passion, more $$$
-          console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes, wants ${votesToBuy}`, actorsToBuyFrom);
-      
+          if (votesToBuy > 0) {
+            console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes, wants ${votesToBuy - votesNeeded} extra`, actorsToBuyFrom);
+          }
+
           let votesBought = 0;
           let capital = actor.state.capital;
           let amountSpentSoFar = 0;
@@ -250,6 +256,10 @@ class Game extends React.Component {
               }
               let amountToSpendOnOffer = actorToBuyFrom.costToInfluence[actor.position];
               const existingOffers = [...(this.props?.currentVoteOffers[actorToBuyFrom.id] || []), ...(offers[actorToBuyFrom.id] || [])].filter(x => x.motionId === motion.id);
+              const topOffer = existingOffers.sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1)[0];
+              if (existingOffers.length && (topOffer.vote === actor.position || topOffer.purchaseAgreement?.purchasedBy === 'player')) {
+                return;
+              }
               if (existingOffers.length) {
                 // Make sure to go above the existing offer
                 amountToSpendOnOffer = Math.max(

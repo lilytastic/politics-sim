@@ -6,6 +6,7 @@ import { getById } from '../helpers/entity.helpers';
 import { State } from '../store/reducers';
 import { changeVote } from '../store/actionCreators';
 import { connect, ConnectedProps } from 'react-redux';
+import FlipMove from 'react-flip-move';
 
 class SettlementCircle extends React.Component {
   // @ts-ignore;
@@ -22,10 +23,12 @@ class SettlementCircle extends React.Component {
   }
 
   render = () => (
-    this.props.actors
-      .filter(x => x.id === this.props.player?.id || x.voteWeight > 0)
-      .sort((a, b) => a.id === this.props.player.id ? -1 : 1)
-      .map((x, i) => (
+    <FlipMove>
+    {
+      this.props.actors
+        .filter(x => x.id === this.props.player?.id || x.voteWeight > 0)
+        .sort((a, b) => a.id === this.props.player.id ? -1 : 1)
+        .map((x, i) => (
         <div className={`${(i === 0 && x.id === this.props.player?.id) ? 'mb-4' : 'mb-2'} btn-group-vertical bg-white w-100 rounded actor__wrapper`} key={x.id}>
           <button className="btn btn-outline-dark w-100 text-left">
             <div className="row">
@@ -42,7 +45,7 @@ class SettlementCircle extends React.Component {
             <div className="d-flex">
               {x.state.positions.map(position => (
                 <div key={position.stat} style={{ opacity: position.passion / 100.0 }}>
-                  <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'initial'}></StatIcon>
+                  <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'inherit'}></StatIcon>
                 </div>
               ))}
             </div>
@@ -86,6 +89,8 @@ class SettlementCircle extends React.Component {
           })() : null}
         </div>
       ))
+    }
+    </FlipMove>
   )
 }
 

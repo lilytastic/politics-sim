@@ -30,14 +30,14 @@ if (!Array.prototype.shuffle) {
   }
 }
 if (!Array.prototype.toEntities) {
-  Array.prototype.toEntities = function <T>(preserveId: boolean = true) {
+  Array.prototype.toEntities = function <T>(prop: string = 'id', preserveId: boolean = true) {
     const obj: { [id: string]: T } = {};
     for (let i = 0; i < this.length; i++) {
       const entity = { ...this[i] }
       if (preserveId) {
-        delete entity.id;
+        delete entity[prop];
       }
-      obj[this[i].id] = entity;
+      obj[this[i][prop]] = entity;
     }
     return obj;
   }
@@ -124,7 +124,7 @@ export function rootReducer(state = initialState, action: any): State {
         }
       };
     case 'LOAD_ACTORS':
-      const newState = action.actors.map((x: ActorWithState) => ({...state.saveData.actorState, ...x.state, id: x.id})).toEntities(false);
+      const newState = action.actors.map((x: ActorWithState) => ({...state.saveData.actorState, ...x.state, id: x.id})).toEntities('id', false);
       return {
         ...state,
         actors: action.actors.map((x: ActorWithState) => {const mutated = {...x}; delete mutated.state; return mutated;}),
@@ -134,7 +134,7 @@ export function rootReducer(state = initialState, action: any): State {
         }
       };
     case 'UPDATE_ACTORS':
-      const _newState = action.changes.map((x: any) => ({...state.saveData.actorState[x.id], ...x.changes})).toEntities(false);
+      const _newState = action.changes.map((x: any) => ({...state.saveData.actorState[x.id], ...x.changes})).toEntities('id', false);
       return {
         ...state,
         saveData: {
@@ -263,6 +263,10 @@ export function rootReducer(state = initialState, action: any): State {
         const existingStance = settlementState?.policies[policy.id];
         if (policy.canBeRepealed && existingStance) {
           const effects = policy.stances[existingStance].effects.map(x => ({stat: x.stat, amount: -x.amount}));
+          const effectCost = effects.reduce((acc, curr) => {
+            let amount = curr.amount;
+            return acc + Math.abs(amount);
+          }, 0) * 20;
           possibleMotions.push({
             id: `repeal_${policy.id}`,
             name: `Repeal Stance on ${policy.label}`,
@@ -270,10 +274,8 @@ export function rootReducer(state = initialState, action: any): State {
               type: 'REPEAL_POLICY',
               payload: {policyId: policy.id}
             },
-            costToTable: effects.reduce((acc, curr) => {
-              let amount = curr.amount;
-              return acc + Math.abs(amount);
-            }, 0) * 20,
+            rewardForPassing: effectCost * 3,
+            costToTable: effectCost,
             effects: effects
           });
         }
@@ -286,6 +288,10 @@ export function rootReducer(state = initialState, action: any): State {
               amount: existingStance ? x.amount - (relevantEffect ? relevantEffect.amount : 0) : x.amount
             };
           });
+          const effectCost = effects.reduce((acc, curr) => {
+            let amount = curr.amount;
+            return acc + Math.abs(amount);
+          }, 0) * 20;
           possibleMotions.push({
             id: `${policy.id}_${key}`,
             name: `Declare ${policy.label} ${stance.label}`,
@@ -293,10 +299,8 @@ export function rootReducer(state = initialState, action: any): State {
               type: 'CHANGE_POLICY',
               payload: {policyId: policy.id, stanceId: key}
             },
-            costToTable: effects.reduce((acc, curr) => {
-              let amount = curr.amount;
-              return acc + Math.abs(amount);
-            }, 0) * 20,
+            rewardForPassing: effectCost * 3,
+            costToTable: effectCost,
             effects: effects
           });
         });
