@@ -14,6 +14,7 @@ import { Vote } from '../models/vote.model';
 import CurrentPhase from './CurrentPhase';
 import { calculateActorCapitalWithAllowance } from '../helpers/actor.helpers';
 import SettlementView from './SettlementView';
+import { StatIcon } from '../components/StatIcon';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -164,11 +165,11 @@ class Game extends React.Component {
 
   actorsVote = () => {
     timer(5000).subscribe(() => {
-      this.npcsVote(10000);
-      timer(10000).subscribe(() => {
-        this.npcsMakeOffers(10000);
-        timer(10000).subscribe(() => {
-          this.npcsConsiderOffers(10000);
+      this.npcsVote(20000);
+      timer(20000).subscribe(() => {
+        this.npcsMakeOffers(30000);
+        timer(30000).subscribe(() => {
+          this.npcsConsiderOffers(30000);
         });
       });
     });
@@ -236,14 +237,34 @@ class Game extends React.Component {
   }
 
   render = () => (
-    <div className="p-5 content">
-      <div>
-        {false && this.props?.notifications.map((x, i) => (
-          <div className={`alert alert-${x.type}`}>{x.text}</div>
-        ))}
+    <div>
+      <nav className="navbar py-1 sticky-top navbar-dark bg-dark">
+        <div className="container">
+          <ul className="navbar-nav mr-auto">
+            <li className="nav-item">
+              <span className="navbar-text font-weight-bold">
+                Qui'shon
+              </span>
+            </li>
+          </ul>
+          <ul className="navbar-nav">
+            <li className="nav-item">
+              <span className="navbar-text">
+                <StatIcon stat="capital" value={this.props.player?.state.capital}></StatIcon>
+              </span>
+            </li>
+          </ul>
+        </div>
+      </nav>
+      <div className="py-3 container bg-light">
+        <div>
+          {false && this.props?.notifications.map((x, i) => (
+            <div className={`alert alert-${x.type}`}>{x.text}</div>
+          ))}
+        </div>
+        <div onClick={() => {this.props.dispatch(inspectMotion(''))}} className={"fade--full" + (!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? ' active' : '')}></div>
+        <SettlementView></SettlementView>
       </div>
-      <div onClick={() => {this.props.dispatch(inspectMotion(''))}} className={"fade--full" + (!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? ' active' : '')}></div>
-      <SettlementView></SettlementView>
     </div>
   );
 }

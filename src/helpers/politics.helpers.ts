@@ -65,7 +65,7 @@ export const getDesiredOffers = (actor: ActorWithStateAndOffices & {position: st
     0;
 
   // Actor cares enough to buy this many votes from other actors.
-  const votesToBuy = ((votesNeeded + 1) * 1.33) + 1 + Math.abs(actor.approval / 10);
+  const votesToBuy = (Math.max(0, votesNeeded + 1) * 1.33) + Math.ceil(Math.abs(actor.approval) / 10);
   const amountToSpend = actor.id === motion.tabledBy ? actor.state.capital : (actor.state.capital / 2); // TODO: Base off approval -- more passion, more $$$
   if (votesToBuy > 0) {
     console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${votesNeeded} votes, wants ${votesToBuy - votesNeeded} extra`, actorsToBuyFrom);

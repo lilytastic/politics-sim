@@ -31,7 +31,7 @@ export const SettlementView = ({currentSettlement, policies, phase}: Props) => {
 
 const mapStateToProps = (state: State) => {
   const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
-  const profile: {[id: string]: number} = {purpose: 0, joy: 0, education: 0, vigilance: 0, dignity: 0, charity: 0, creativity: 0, openness: 0};
+  const profile: {[id: string]: number} = {purpose: 0, charity: 0, education: 0, openness: 0, dignity: 0, joy: 0, creativity: 0, vigilance: 0};
   Object.keys(settlement.state.policies).forEach(policyId => {
     const stance = settlement.state.policies[policyId];
     state.policies.find(x => x.id === policyId)?.stances[stance].effects.forEach(effect => {

@@ -30,8 +30,8 @@ class SettlementCircle extends React.Component {
         .filter(x => x.id === this.props.player?.id || x.voteWeight > 0)
         .sort((a, b) => a.id === this.props.player.id ? -1 : 1)
         .map((x, i) => (
-        <div className={`${(i === 0 && x.id === this.props.player?.id) ? 'mb-4' : 'mb-2'} btn-group-vertical bg-white w-100 rounded actor__wrapper`} key={x.id}>
-          <button className="btn btn-outline-dark w-100 text-left">
+        <div className={`${(i === 0 && x.id === this.props.player?.id) ? 'mb-4' : 'mb-2'} btn-group-vertical shadow-sm bg-white w-100 rounded actor__wrapper`} key={x.id}>
+          <button className="btn btn-outline-dark border-secondary w-100 text-left">
             <ActorInfo actor={x}></ActorInfo>
           </button>
           {(this.props.phase?.id !== 'table' && x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.props.inspectedMotion)) ? (() => {

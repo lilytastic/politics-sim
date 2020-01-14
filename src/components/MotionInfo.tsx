@@ -8,7 +8,7 @@ export const MotionInfo = ({ motion, tabledBy, children }: any) => {return (
         {motion.name}
       </div>
       <div>
-        {tabledBy ? (<span>Drafted by <b>{tabledBy?.name}</b></span>) : ''}
+        {tabledBy ? (<span>Drafted by <b>{tabledBy?.id === 'player' ? 'You' : tabledBy?.name}</b></span>) : ''}
       </div>
     </div>
     <div className="d-flex justify-content-between">

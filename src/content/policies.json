@@ -31,7 +31,7 @@
 		"stances": {
 			"subsidized": {
 				"label": "Subsidized",
-				"effects": [{"stat": "education", "amount": 10}]
+				"effects": [{"stat": "education", "amount": 10}, {"stat": "charity", "amount": 5}]
 			},
 			"restricted": {
 				"label": "Restricted",
@@ -80,7 +80,7 @@
 		"stances": {
 			"subsidized": {
 				"label": "Subsidized",
-				"effects": [{"stat": "dignity", "amount": 20}, {"stat": "education", "amount": 45}]
+				"effects": [{"stat": "charity", "amount": 20}, {"stat": "education", "amount": 45}]
 			},
 			"restricted": {
 				"label": "Restricted",

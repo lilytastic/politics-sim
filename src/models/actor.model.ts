@@ -159,7 +159,7 @@ export const actors: ActorWithState[] = [
           passion: 50
         },
         {
-          stat: 'education',
+          stat: 'creativity',
           attitude: 'raise',
           passion: 50
         }

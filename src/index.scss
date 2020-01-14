@@ -5,6 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #dddddd !important;
 }
 
 code {
@@ -68,7 +69,7 @@ code {
   &.active {
     opacity: 0.35;
     transition: opacity .35s ease-in-out;
-    pointer-events: all;
+    // pointer-events: all;
     cursor: pointer;
     &:hover {
       opacity: 0.4;
@@ -91,7 +92,6 @@ ul {
 }
 
 .App-main {
-  background-color: #eeeeee;
   color: #555555;
 }
 

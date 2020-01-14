@@ -2,21 +2,21 @@ import React from 'react';
 import { StatIcon } from './StatIcon';
 import { ConnectedProps, connect } from 'react-redux';
 import { State } from '../store/reducers';
-import { ActorWithState, ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
+import { ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { getAssociatedVoteColor } from '../helpers/politics.helpers';
 import { getById } from '../helpers/entity.helpers';
 
-export const ActorInfo = ({ actor, availableMotions, motionVotes, player, actors, phase, inspectedMotion}: Props) => {
+export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion}: Props) => {
   return (
     <div>
       <div className="row">
         <div className="col">
-          <b>{actor.id === player.id ? 'You' : actor.name}</b>
+          <b>{actor.id === 'player' ? 'You' : actor.name}</b>
           {actor.offices.length > 0 && (', ' + ((actor.gender === 'm' ? actor.offices[0].name.masculine : actor.offices[0].name.feminine) || actor.offices[0].name.basic))}
         </div>
-        <div className="col row mr-0 justify-content-end">
-          <div className="col-6"><StatIcon stat='capital' value={actor.state.capital}></StatIcon></div>
-          <div className="col-4"><StatIcon stat='votes' value={actor.voteWeight}></StatIcon></div>
+        <div className="col row m-0 justify-content-end">
+          <div className="col col-7"><StatIcon stat='capital' value={actor.state.capital}></StatIcon></div>
+          <div className="col col-5 pr-0"><StatIcon stat='votes' value={actor.voteWeight}></StatIcon></div>
         </div>
       </div>
       {
@@ -28,7 +28,7 @@ export const ActorInfo = ({ actor, availableMotions, motionVotes, player, actors
         ))}
       </div>
       }
-      {phase?.id !== 'table' && !!availableMotions.find(motion => motion.id === inspectedMotion) ? (
+      {phase?.id !== 'table' && inspectedMotion !== '' ? (
         <div>
           <div>
             {!!motionVotes[inspectedMotion]?.[actor.id] ? (
@@ -51,22 +51,12 @@ export const ActorInfo = ({ actor, availableMotions, motionVotes, player, actors
 }
 
 const mapStateToProps = (state: State) => {
-  const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
-
-  const actors = state.actors
-    .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
-    .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
-
   return {
-    actors: actors,
-    settlement: settlement,
+    actors: state.actors,
     phase: state.phases[state.saveData.currentPhase || 0],
-    player: actors.find((x: any) => x.id === 'player') || actors[0],
-    motionsTabled: state.saveData.motionsTabled,
     motionVotes: state.saveData.motionVotes,
     currentVoteOffers: state.saveData.currentVoteOffers,
-    inspectedMotion: state.saveData.inspectedMotion,
-    availableMotions: state.saveData.availableMotions
+    inspectedMotion: state.saveData.inspectedMotion
   }
 };
 
