@@ -1,17 +1,18 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux'
 import { interval, timer } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion, addAlert } from '../store/actionCreators';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion, addAlert, addOffers } from '../store/actionCreators';
 import { actors, ActorWithState, ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { State } from '../store/reducers';
 import { Motion } from '../models/motion.model';
-import { getActorApproval, getActorsWithApproval, getDesiredOffers, tallyVotes, getPassedMotions } from '../helpers/politics.helpers';
+import { getActorApproval, getActorsWithApproval, getDesiredOffers, getPassedMotions } from '../helpers/politics.helpers';
 import { getById } from '../helpers/entity.helpers';
 import { SettlementProfile } from './SettlementProfile';
 import SettlementCircle from './SettlementCircle';
 import SettlementMotions from './SettlementMotions';
-import { Vote, VoteData } from '../models/vote.model';
+import { Vote } from '../models/vote.model';
 import CurrentPhase from './CurrentPhase';
+import { calculateActorCapitalWithAllowance } from '../helpers/actor.helpers';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -50,15 +51,8 @@ class Game extends React.Component {
   };
 
   grantAllowance = () => {
-    this.props.dispatch(updateActors((this.props.actors||[]).map(actor => {
-      const softCap = actor.offices.length ? Math.max(...actor.offices.map(x => x.softCapitalCap)) : 0;
-      const allowance = actor.offices.length ? actor.offices.reduce((acc, curr) => acc + curr.softCapitalPerCycle, 0) : 0;
-      const capital = Math.max(
-        actor.state.capital,
-        Math.min(softCap, actor.state.capital + Math.max(100, allowance))
-      );
-      return {id: actor.id, changes: {capital: capital}}
-    })));
+    const actorsWithNewCapital = (this.props.actors||[]).map(actor => ({id: actor.id, changes: {capital: calculateActorCapitalWithAllowance(actor)}}));
+    this.props.dispatch(updateActors(actorsWithNewCapital));
   }
 
   getVote(motionId: string, actorId: string): Vote {
@@ -155,75 +149,66 @@ class Game extends React.Component {
     });
   }
 
+  getTabledMotions = () => {
+    return this.props?.availableMotions
+      .map(motion => ({...motion, tabledBy: getById(this.props.motionsTabled, motion.id)?.tabledBy}))
+      .filter(motion => !!motion.tabledBy);
+  };
+
   actorsVote = () => {
     timer(5000).subscribe(() => {
-      this.handleVote();
+      this.npcsVote(10000);
       timer(10000).subscribe(() => {
-        this.makeOffers();
+        this.npcsMakeOffers(10000);
         timer(10000).subscribe(() => {
-          this.handleOffers();
+          this.npcsConsiderOffers(10000);
         });
       });
     });
   }
 
-  handleVote = () => {
-    const tabledMotions = this.props?.availableMotions
-      .map(motion => ({...motion, tabledBy: getById(this.props.motionsTabled, motion.id)?.tabledBy}))
-      .filter(motion => !!motion.tabledBy)
-
-    tabledMotions.forEach(motion => {
-      const actors = getActorsWithApproval(this.props?.actors, motion);
-
-      actors.filter(x => x.voteWeight && x.id !== this.props.player.id).forEach((actor, i) => {
-        timer(Math.random() * 9000).subscribe(x => {
-          this.props.dispatch(changeVote({
-            actorId: actor.id,
-            motionId: motion.id,
-            vote: actor.position,
-            reason: 'freely'
-          }));
-        });
-      })
-    });
-  }
-
-  makeOffers = () => {
-    const offers: {[actorId: string]: Vote[]} = {}
-
-    const tabledMotions = this.props?.availableMotions
-      .map(motion => ({...motion, tabledBy: getById(this.props.motionsTabled, motion.id)?.tabledBy}))
-      .filter(motion => !!motion.tabledBy)
-
-    tabledMotions.forEach(motion => {
-      // This is all the AI actors who are passionately involved and willing to make offers
+  npcsVote = (duration: number) => {
+    this.getTabledMotions().forEach(motion => {
       getActorsWithApproval(this.props?.actors, motion)
-        .filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3)
-        .reverse()
-        .forEach(actor => {
-          const actors = getActorsWithApproval(this.props?.actors, motion);
-          getDesiredOffers(actor, motion, actors, this.props?.motionVotes[motion.id], this.props?.currentVoteOffers).forEach(x => {
-            offers[x.actorId] = offers[x.actorId] || [];
-            offers[x.actorId] = [...offers[x.actorId], x];
+        .filter(x => x.voteWeight > 0 && x.id !== this.props.player.id)
+        .forEach((actor, i) => {
+          timer(Math.random() * duration).subscribe(() => {
+            this.props.dispatch(changeVote({
+              actorId: actor.id,
+              motionId: motion.id,
+              vote: actor.position,
+              reason: 'freely'
+            }));
           });
         });
     });
-
-    console.log('Offers have been extended', offers);
-    this.props.dispatch(setOffers(offers));
   }
 
-  handleOffers = () => {
-    const tabledMotions = this.props?.availableMotions
-      .map(motion => ({...motion, tabledBy: getById(this.props.motionsTabled, motion.id)?.tabledBy}))
-      .filter(motion => !!motion.tabledBy)
+  npcsMakeOffers = (duration: number) => {
+    this.getTabledMotions().forEach(motion => {
+      // This is all the AI actors who are passionately involved and willing to make offers
+      const actors = getActorsWithApproval(this.props?.actors, motion)
+      actors
+        .filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3)
+        .reverse()
+        .forEach(actor => {
+          timer(Math.random() * duration).subscribe(() => {
+            const desiredOffers = getDesiredOffers(actor, motion, actors, this.props?.motionVotes[motion.id], this.props?.currentVoteOffers);
+            if (desiredOffers.length > 0) {
+              this.props.dispatch(addOffers(desiredOffers));
+            }
+          });
+        });
+    });
+  }
 
-    tabledMotions.forEach(motion => {
+  npcsConsiderOffers = (duration: number) => {
+    this.getTabledMotions().forEach(motion => {
       this.props.actors
         .shuffle()
         .filter(x => this.props.player.id !== x.id && motion.tabledBy !== x.id)
         .forEach((actor, i) => {
-          timer(Math.random() * 9000).subscribe(x => {
+          timer(Math.random() * duration).subscribe(() => {
             let existingVote = this.props.motionVotes[motion.id]?.[actor.id];
             if (!!existingVote?.purchaseAgreement) {
               return;

@@ -50,7 +50,7 @@ export const tallyVotesFromEntity = (votes: {[id: string]: {vote: string; reason
   return tallyVotes(Object.keys(votes).map(x => ({actorId: x, motionId: 'LIES', ...votes[x]})), actors);
 }
 
-export const getDesiredOffers = (actor: any, motion: Motion & {tabledBy: string}, actors: any[], currentVotes: {[actorId: string]: VoteData}, currentOffers: {[actorId: string]: Vote[]}) => {
+export const getDesiredOffers = (actor: ActorWithStateAndOffices & {position: string, approval: number}, motion: Motion & {tabledBy: string}, actors: any[], currentVotes: {[actorId: string]: VoteData}, currentOffers: {[actorId: string]: Vote[]}) => {
   const desiredOffers: Vote[] = [];
 
   const actorsToBuyFrom = actors
@@ -74,6 +74,7 @@ export const getDesiredOffers = (actor: any, motion: Motion & {tabledBy: string}
   let votesBought = 0;
   let capital = actor.state.capital;
   let amountSpentSoFar = 0;
+
   actorsToBuyFrom
     .map(_actor => ({..._actor, existingVote: currentVotes[_actor.id]}))
     .filter(x => x.costToInfluence[actor.position] <= amountToSpend - amountSpentSoFar)

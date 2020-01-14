@@ -218,6 +218,19 @@ export function rootReducer(state = initialState, action: any): State {
           motionVotes: motionVotes
         }
       };
+    case 'ADD_VOTE_OFFERS':
+      const offers = state.saveData.currentVoteOffers;
+      action.offers.forEach((offer: Vote) => {
+        offers[offer.actorId] = offers[offer.actorId] || [];
+        offers[offer.actorId].push(offer);
+      });
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          currentVoteOffers: offers
+        }
+      };
     case 'SET_VOTE_OFFERS':
       return {
         ...state,

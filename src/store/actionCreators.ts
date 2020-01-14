@@ -38,6 +38,10 @@ export const passMotion = (motion: Motion) => ({
   motion
 });
 
+export const addOffers = (offers: Vote[]) => ({
+  type: 'ADD_VOTE_OFFERS',
+  offers
+})
 export const setOffers = (offers: {[id: string]: Vote[]}) => ({
   type: 'SET_VOTE_OFFERS',
   offers
