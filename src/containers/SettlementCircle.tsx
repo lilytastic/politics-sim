@@ -71,7 +71,7 @@ const mapStateToProps = (state: State, ownProps: {settlement: SettlementWithStat
   return {
     actors: actors,
     settlement: settlement,
-    phase: state.phases[settlement?.state.currentPhase || 0],
+    phase: settlement.state.currentPhase,
     player: actors.find((x: any) => x.id === 'player') || actors[0],
     motionsTabled: settlement?.state.motionsTabled || [],
     motionVotes: settlement?.state.motionVotes || {},

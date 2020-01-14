@@ -6,6 +6,7 @@ import { SettlementState, SettlementBaseData } from "../models/settlement.model"
 import { POLITICAL_STRUCTURE_TRIBAL } from "../content/politicalStructure.const";
 import { Vote } from "../models/vote.model";
 import { SaveData } from "../models/save-data.model";
+import { Phase, PHASES } from "../models/phase.model";
 
 declare global {
   interface Array<T> {
@@ -49,7 +50,6 @@ export interface State {
   actors: ActorBaseData[];
   policies: PolicyBaseData[];
   settlements: SettlementBaseData[];
-  phases: {id: string, label: string, countdown: number}[];
   saveData: SaveData;
 }
 
@@ -59,7 +59,6 @@ const initialState: State = {
   // @ts-ignore;
   policies: Policies.default,
   settlements: [{id: 'test', name: 'TestSettlement'}],
-  phases: [{ id: 'table', label: 'Draft', countdown: 30 }, { id: 'vote', label: 'Vote', countdown: 90 }],
   saveData: {
     actorState: {},
     inspectedMotion: '',
@@ -71,9 +70,9 @@ const initialState: State = {
         history: [],
         availableMotions: [],
         motionsTabled: [],
-        motionVotes: {}, // type can be 'motivated', 'bought', 'respect'
+        motionVotes: {}, // type can be 'freely', 'bought', 'respect'
         currentVoteOffers: {},
-        currentPhase: 0,
+        currentPhase: PHASES.TABLE,
         currentPhaseCountdown: 0,
         ...POLITICAL_STRUCTURE_TRIBAL,
         actorPositions: {
@@ -284,7 +283,6 @@ export function rootReducer(state = initialState, action: any): State {
     case 'CHANGE_CURRENT_PHASE': {
       const settlementState = {...state.saveData.settlementState};
       settlementState[action.settlementId].currentPhase = action.currentPhase;
-      settlementState[action.settlementId].currentPhaseCountdown = 0;
       return { ...state, saveData: {...state.saveData, settlementState }};
     }
     case 'CHANGE_CURRENT_PHASE_COUNTDOWN': {

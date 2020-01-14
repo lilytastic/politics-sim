@@ -1,6 +1,7 @@
 import { ActorState, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
 import { Vote } from "../models/vote.model";
+import { Phase } from "../models/phase.model";
 
 export const changeScreen = (screen: string) => ({
   type: 'CHANGE_SCREEN',
@@ -22,7 +23,7 @@ export const inspectMotion = (motion: string) => ({
   motion
 });
 
-export const changeCurrentPhase = (currentPhase: number, settlementId: string) => ({
+export const changeCurrentPhase = (currentPhase: Phase, settlementId: string) => ({
   type: 'CHANGE_CURRENT_PHASE',
   currentPhase,
   settlementId

@@ -56,7 +56,7 @@ const mapStateToProps = (state: State) => {
   return {
     actors: state.actors,
     currentSettlement: settlementId,
-    phase: state.phases[settlementState.currentPhase || 0],
+    phase: settlementState.currentPhase,
     motionVotes: settlementState.motionVotes,
     currentVoteOffers: settlementState.currentVoteOffers,
     inspectedMotion: state.saveData.inspectedMotion

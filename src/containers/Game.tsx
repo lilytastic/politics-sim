@@ -11,6 +11,7 @@ import { Vote } from '../models/vote.model';
 import { calculateActorCapitalWithAllowance } from '../helpers/actor.helpers';
 import SettlementView from './SettlementView';
 import { Navbar } from '../components/Navbar';
+import { PHASES } from '../models/phase.model';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -77,13 +78,15 @@ class Game extends React.Component {
       case 'table':
         if (!this.props.motionsTabled.length) {
           this.props.dispatch(changeCurrentPhaseCountdown(0, this.props.settlement.id));
+        } else {
+          this.props.dispatch(changeCurrentPhase(PHASES.VOTE, this.props.settlement.id));
         }
         break;
       case 'vote':
         this.handleResults();
+        this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
         break;
     }
-    this.props.dispatch(changeCurrentPhase((this.props.currentPhase + 1) % this.props.phases.length, this.props.settlement.id));
 
     const newPhase = this.props.phase;
     if (newPhase?.id === 'table') {
@@ -250,15 +253,15 @@ class Game extends React.Component {
 }
 
 const mapStateToProps = (state: State) => {
-  const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
+  const settlements = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}));
+  const settlement = settlements[0];
 
   const actors: ActorWithStateAndOffices[] = state.actors
     .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
     .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
 
   return {
-    phase: state.phases[settlement.state.currentPhase || 0],
-    phases: state.phases,
+    phase: settlement.state.currentPhase,
     actors: actors,
     player: actors.find((x: any) => x.id === 'player') || actors[0],
     motionsTabled: settlement.state.motionsTabled,
