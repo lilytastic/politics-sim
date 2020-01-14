@@ -4,10 +4,10 @@ import { StatIcon } from './StatIcon';
 export const MotionInfo = ({ motion, tabledBy, children }: any) => {return (
   <div>
     <div className="d-flex justify-content-between">
-      <div className="large mb-1 font-weight-bold">
+      <div className="large font-weight-bold">
         {motion.name}
       </div>
-      <div>
+      <div className="text-right pl-2">
         {tabledBy ? (<span>Drafted by <b>{tabledBy?.id === 'player' ? 'You' : tabledBy?.name}</b></span>) : ''}
       </div>
     </div>

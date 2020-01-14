@@ -238,8 +238,8 @@ class Game extends React.Component {
 
   render = () => (
     <div>
-      <nav className="navbar py-1 sticky-top navbar-dark bg-dark">
-        <div className="container">
+      <nav className="navbar py-1 px-0 sticky-top navbar-dark bg-dark">
+        <div className="container px-4">
           <ul className="navbar-nav mr-auto">
             <li className="nav-item">
               <span className="navbar-text font-weight-bold">
@@ -256,7 +256,7 @@ class Game extends React.Component {
           </ul>
         </div>
       </nav>
-      <div className="py-3 container bg-light">
+      <div className="p-4 container bg-light">
         <div>
           {false && this.props?.notifications.map((x, i) => (
             <div className={`alert alert-${x.type}`}>{x.text}</div>
