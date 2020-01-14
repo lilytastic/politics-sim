@@ -7,14 +7,10 @@ import { State } from '../store/reducers';
 import { Motion } from '../models/motion.model';
 import { getActorApproval, getActorsWithApproval, getDesiredOffers, getPassedMotions } from '../helpers/politics.helpers';
 import { getById } from '../helpers/entity.helpers';
-import { SettlementProfile } from './SettlementProfile';
-import SettlementCircle from './SettlementCircle';
-import SettlementMotions from './SettlementMotions';
 import { Vote } from '../models/vote.model';
-import CurrentPhase from './CurrentPhase';
 import { calculateActorCapitalWithAllowance } from '../helpers/actor.helpers';
 import SettlementView from './SettlementView';
-import { StatIcon } from '../components/StatIcon';
+import { Navbar } from '../components/Navbar';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
