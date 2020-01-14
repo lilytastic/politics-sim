@@ -7,6 +7,7 @@ import { State } from '../store/reducers';
 import { changeVote } from '../store/actionCreators';
 import { connect, ConnectedProps } from 'react-redux';
 import FlipMove from 'react-flip-move';
+import ActorInfo from '../components/ActorInfo';
 
 class SettlementCircle extends React.Component {
   // @ts-ignore;
@@ -31,43 +32,7 @@ class SettlementCircle extends React.Component {
         .map((x, i) => (
         <div className={`${(i === 0 && x.id === this.props.player?.id) ? 'mb-4' : 'mb-2'} btn-group-vertical bg-white w-100 rounded actor__wrapper`} key={x.id}>
           <button className="btn btn-outline-dark w-100 text-left">
-            <div className="row">
-              <div className="col">
-                <b>{x.id === this.props.player.id ? 'You' : x.name}</b>
-                {x.offices.length > 0 && (', ' + ((x.gender === 'm' ? x.offices[0].name.masculine : x.offices[0].name.feminine) || x.offices[0].name.basic))}
-              </div>
-              <div className="col row mr-0 justify-content-end">
-                <div className="col-6"><StatIcon stat='capital' value={x.state.capital}></StatIcon></div>
-                <div className="col-4"><StatIcon stat='votes' value={x.voteWeight}></StatIcon></div>
-              </div>
-            </div>
-            {
-            <div className="d-flex">
-              {x.state.positions.map(position => (
-                <div key={position.stat} style={{ opacity: position.passion / 100.0 }}>
-                  <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'inherit'}></StatIcon>
-                </div>
-              ))}
-            </div>
-            }
-            {this.props.phase?.id !== 'table' && !!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? (
-              <div>
-                <div>
-                  {!!this.props.motionVotes[this.props.inspectedMotion]?.[x.id] ? (
-                    <span>
-                      Voted <b style={{ color: getAssociatedVoteColor(this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote || 'abstain') }}>{this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.vote || 'abstain'}</b>
-                    </span>
-                  ) : x.voteWeight > 0 ? 'Vote pending' : `Cannot vote`}
-                  {!!this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement && (
-                    <span>
-                      &nbsp;as a favour to {getById(this.props.actors, this.props.motionVotes[this.props.inspectedMotion]?.[x.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp;&nbsp; <StatIcon stat='capital' value={this.props.motionVotes[this.props.inspectedMotion][x.id]?.purchaseAgreement.amountSpent}></StatIcon>
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-                <div></div>
-              )}
+            <ActorInfo actor={x}></ActorInfo>
           </button>
           {(this.props.phase?.id !== 'table' && x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.props.inspectedMotion)) ? (() => {
             // @ts-ignore;

@@ -125,9 +125,16 @@ class Game extends React.Component {
     getPassedMotions(this.props?.motionVotes, this.props?.actors)
       .map(x => this.props?.availableMotions.find(y => y.id === x))
       .filter(x => !!x)
+      .map(motion => (motion ? {...motion, tabledBy: this.props.motionsTabled.find(x => x.id == motion.id)?.tabledBy} : undefined))
       .forEach(motion => {
-        // @ts-ignore;
-        this.props.dispatch(passMotion(motion));
+        if (!!motion) {
+          this.props.dispatch(passMotion(motion));
+          if (!!motion.tabledBy) {
+            const actor = this.props.actors.find(x => x.id === motion.tabledBy);
+            console.log(`${actor?.name} received ${motion.rewardForPassing} as a reward for passing ${motion.name}`);
+            this.props.dispatch(updateActors([{id: motion.tabledBy, changes: {capital: (actor?.state?.capital||0) + motion.rewardForPassing}}]));
+          }
+        }
       });
   };
 
