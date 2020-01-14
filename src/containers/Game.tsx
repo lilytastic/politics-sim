@@ -222,15 +222,15 @@ class Game extends React.Component {
               return;
             }
             const personalOffers = (this.props.currentVoteOffers[actor.id]||[]).shuffle().sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1) || [];
-            personalOffers.filter(offer => offer.motionId === motion.id).forEach(offer => {
-              const purchaser = this.props.actors.find(x => x.id === offer.purchaseAgreement?.purchasedBy);
-              const amountSpent = offer.purchaseAgreement?.amountSpent || 0;
+            const topOffer = personalOffers.filter(offer => offer.motionId === motion.id)[0];
+            if (!!topOffer) {
+              const purchaser = this.props.actors.find(x => x.id === topOffer.purchaseAgreement?.purchasedBy);
+              const amountSpent = topOffer.purchaseAgreement?.amountSpent || 0;
               if (purchaser && purchaser.state.capital >= amountSpent && !(existingVote?.purchaseAgreement)) {
-                // existingVoteIndex !== -1 ? changes[existingVoteIndex] = offer : changes.push(offer);
-                this.props.dispatch(changeVote(offer));
-                console.log(`${actor.name} agreed to vote ${offer.vote} on ${motion.name} for ${purchaser.name} in exchange for ${amountSpent}`);
+                this.props.dispatch(changeVote(topOffer));
+                console.log(`${actor.name} agreed to vote ${topOffer.vote} on ${motion.name} for ${purchaser.name} in exchange for ${amountSpent}`);
               }
-            });
+            }
           });
         });
     });

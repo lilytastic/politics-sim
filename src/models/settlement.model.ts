@@ -3,6 +3,7 @@ import { ActorPoliticalStatus } from "./actor.model";
 
 export interface SettlementBaseData {
 	id: string;
+	name: string;
 }
 
 export interface SettlementState {

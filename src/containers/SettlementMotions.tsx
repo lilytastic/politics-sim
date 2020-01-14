@@ -79,10 +79,10 @@ class SettlementMotions extends React.Component {
     <FlipMove>
       {this.props.availableMotions
           .map(motion => ({...motion, onTable: getById(this.props.motionsTabled, motion.id)}))
-          .filter(motion => (this.props.phase?.id === 'table' && !motion.onTable) || (this.props.phase?.id === 'vote' && !!motion.onTable))
+          .filter(motion => (this.props.phase?.id === 'table') || (this.props.phase?.id === 'vote' && !!motion.onTable))
           .map(motion => (
         <div key={motion.id}
-            className={`text-left btn-group-vertical shadow-sm motion__wrapper motion__wrapper--${this.props.phase?.id !== 'vote' ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'} btn-group-vertical mb-3 w-100 bg-light rounded` + (this.props.inspectedMotion === motion.id && ' shadow-sm  motion__wrapper--active')}>
+            className={`text-left btn-group-vertical ${(this.props.phase?.id !== 'table' || !motion.onTable) ? 'shadow-sm' : 'shadow'} motion__wrapper motion__wrapper--${this.props.phase?.id !== 'vote' ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'} btn-group-vertical mb-3 w-100 bg-white rounded` + (this.props.inspectedMotion === motion.id && ' shadow-sm  motion__wrapper--active')}>
           <button className={`w-100 btn btn-outline-dark border-secondary text-left p-2 px-3`}
               onClick={() => this.props.dispatch(inspectMotion(motion.id))}>
             <MotionInfo motion={motion}
@@ -119,7 +119,7 @@ class SettlementMotions extends React.Component {
               ))}
             </div>
           )}
-          {this.props.phase?.id === 'table' && (
+          {this.props.phase?.id === 'table' && (!motion.onTable || motion.onTable?.tabledBy === this.props.player.id) && (
             <div className="btn-group w-100">
               <button style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
                   disabled={(!motion.onTable && this.props.player.state.capital < motion.costToTable) || (!!motion.onTable && motion.onTable.tabledBy !== (this.props.player.id))}

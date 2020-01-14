@@ -71,7 +71,7 @@ const initialState: State = {
   actors: [],
   // @ts-ignore;
   policies: Policies.default,
-  settlements: [{id: 'test'}],
+  settlements: [{id: 'test', name: 'TestSettlement'}],
   phases: [{ id: 'table', label: 'Draft', countdown: 30 }, { id: 'vote', label: 'Vote', countdown: 90 }],
   saveData: {
     actorState: {},

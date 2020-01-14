@@ -7,22 +7,24 @@ import CurrentPhase from './CurrentPhase';
 import SettlementCircle from './SettlementCircle';
 import SettlementMotions from './SettlementMotions';
 
-export const SettlementView = ({currentSettlement, policies, phase}: Props) => {
+export const SettlementView = ({settlement, policies, phase}: Props) => {
   return (
     <div>
-      <h2>Profile</h2>
-      <SettlementProfile settlement={currentSettlement} policies={policies}></SettlementProfile>
-      <CurrentPhase></CurrentPhase>
+      <h1 className="mb-3">{settlement.name}</h1>
+      <SettlementProfile settlement={settlement} policies={policies}></SettlementProfile>
 
-      <h2 className="mt-5">Politics</h2>
-      <div className="row">
+      <h2 className="mt-5 mb-2">Politics</h2>
+      <CurrentPhase></CurrentPhase>
+      <div className="row mt-3">
         <div className="col-5">
           <h3 className="mb-3">Circle</h3>
           <SettlementCircle></SettlementCircle>
         </div>
         <div className="col-7">
           <h3 className="mb-3">{phase?.id === 'table' ? 'Opportunities' : 'Measures'}</h3>
-          <SettlementMotions></SettlementMotions>
+          <div style={{minHeight: '800px'}}>
+            <SettlementMotions></SettlementMotions>
+          </div>
         </div>
       </div>
     </div>
@@ -41,7 +43,7 @@ const mapStateToProps = (state: State) => {
   });
   Object.keys(profile).forEach(x => profile[x] = Math.max(0, profile[x]));
   return {
-    currentSettlement: {...settlement, derived: {profile: profile}},
+    settlement: {...settlement, derived: {profile: profile}},
     phase: state.phases[state.saveData.currentPhase || 0],
     policies: state.policies,
   }
