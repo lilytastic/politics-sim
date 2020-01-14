@@ -13,6 +13,7 @@ import SettlementMotions from './SettlementMotions';
 import { Vote } from '../models/vote.model';
 import CurrentPhase from './CurrentPhase';
 import { calculateActorCapitalWithAllowance } from '../helpers/actor.helpers';
+import SettlementView from './SettlementView';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -134,18 +135,17 @@ class Game extends React.Component {
     this.grantAllowance();
     this.props.dispatch(refreshAvailableMotions());
     timer(5000).subscribe(() => {
-      this.props?.actors
-        .filter(x => x.id !== this.props.player.id)
-        .forEach((actor, i) => {
-          interval(Math.random() * 15000).subscribe(() => {
-            this.props.availableMotions.forEach((motion: Motion) => {
-              const approval = getActorApproval(actor, motion);
-              if (approval > 2.5) {
-                this.table(motion.id, actor.id);
-              }
-            });
-          })
-        });
+      const actors = this.props?.actors.filter(x => x.id !== this.props.player.id);
+      this.props.availableMotions.forEach((motion: Motion) => {
+        actors.forEach((actor, i) => {
+          timer(Math.random() * 15000).subscribe(() => {
+            const approval = getActorApproval(actor, motion);
+            if (approval > 2.5) {
+              this.table(motion.id, actor.id);
+            }
+          });
+        })
+      });
     });
   }
 
@@ -236,35 +236,13 @@ class Game extends React.Component {
         ))}
       </div>
       <div onClick={() => {this.props.dispatch(inspectMotion(''))}} className={"fade--full" + (!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? ' active' : '')}></div>
-      <h2>Profile</h2>
-      <SettlementProfile settlement={this.props.currentSettlement} policies={this.props.policies}></SettlementProfile>
-      <CurrentPhase></CurrentPhase>
-      <h2 className="mt-5">Politics</h2>
-      <div className="row">
-        <div className="col-5">
-          <h3 className="mb-3">Circle</h3>
-          <SettlementCircle></SettlementCircle>
-        </div>
-        <div className="col-7">
-          <h3 className="mb-3">{this.props.phase?.id === 'table' ? 'Opportunities' : 'Measures'}</h3>
-          <SettlementMotions></SettlementMotions>
-        </div>
-      </div>
+      <SettlementView></SettlementView>
     </div>
   );
 }
 
 const mapStateToProps = (state: State) => {
   const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
-  const profile: {[id: string]: number} = {purpose: 0, joy: 0, education: 0, vigilance: 0, dignity: 0, charity: 0, creativity: 0, openness: 0};
-  Object.keys(settlement.state.policies).forEach(policyId => {
-    const stance = settlement.state.policies[policyId];
-    state.policies.find(x => x.id === policyId)?.stances[stance].effects.forEach(effect => {
-      profile[effect.stat] = profile[effect.stat] || 0;
-      profile[effect.stat] += effect.amount;
-    });
-  });
-  Object.keys(profile).forEach(x => profile[x] = Math.max(0, profile[x]));
 
   const actors: ActorWithStateAndOffices[] = state.actors
     .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
@@ -273,7 +251,6 @@ const mapStateToProps = (state: State) => {
   return {
     phase: state.phases[state.saveData.currentPhase || 0],
     phases: state.phases,
-    currentSettlement: {...settlement, derived: {profile: profile}},
     actors: actors,
     player: actors.find((x: any) => x.id === 'player') || actors[0],
     motionsTabled: state.saveData.motionsTabled,
