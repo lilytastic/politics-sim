@@ -20,7 +20,7 @@ class SettlementCircle extends React.Component {
       vote: vote,
       reason: 'bought',
       purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}
-    }));
+    }, 'test'));
   }
 
   render = () => (
@@ -69,13 +69,13 @@ const mapStateToProps = (state: State) => {
   return {
     actors: actors,
     settlement: settlement,
-    phase: state.phases[state.saveData.currentPhase || 0],
+    phase: state.phases[settlement.state.currentPhase || 0],
     player: actors.find((x: any) => x.id === 'player') || actors[0],
-    motionsTabled: state.saveData.motionsTabled,
-    motionVotes: state.saveData.motionVotes,
-    currentVoteOffers: state.saveData.currentVoteOffers,
+    motionsTabled: settlement.state.motionsTabled,
+    motionVotes: settlement.state.motionVotes,
+    currentVoteOffers: settlement.state.currentVoteOffers,
     inspectedMotion: state.saveData.inspectedMotion,
-    availableMotions: state.saveData.availableMotions
+    availableMotions: settlement.state.availableMotions
   }
 };
 

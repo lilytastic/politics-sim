@@ -15,6 +15,12 @@ export function getAssociatedVoteColor(vote: string) {
   }
 }
 
+export const returnStandardVotes = (includeAbstainOption = false) => {
+  const basic = [{key: 'yea', color: 'success'}, {key: 'nay', color: 'danger'}];
+  const abstain = {key: 'abstrain', color: 'secondary'};
+  return [...basic, ...(includeAbstainOption ? [abstain] : []) ]
+}
+
 export const currentVoteEntitiesToArray = (currentVotes: {[motionId: string]: {[actorId: string]: VoteData}}, motionId: string) => {
   return Object.keys(currentVotes[motionId]).map(actorId => ({...currentVotes[motionId][actorId], actorId: actorId, motionId: motionId}))
 }
@@ -31,6 +37,10 @@ export const tallyVotes = (votes: Vote[], actors: ActorWithStateAndOffices[]) =>
   return _votes;
 }
 
+export const tallyVotesFromEntity = (votes: {[id: string]: {vote: string; reason: string}}, actors: ActorWithStateAndOffices[]) => {
+  return tallyVotes(Object.keys(votes).map(x => ({actorId: x, motionId: 'LIES', ...votes[x]})), actors);
+}
+
 export const getPassedMotions = (currentVotes: {[motionId: string]: {[actorId: string]: VoteData}}, actors: ActorWithStateAndOffices[]) => {
   const motions: string[] = [];
   Object.keys(currentVotes).forEach((motionId: string) => {
@@ -44,10 +54,6 @@ export const getPassedMotions = (currentVotes: {[motionId: string]: {[actorId: s
     }
   });
   return motions;
-}
-
-export const tallyVotesFromEntity = (votes: {[id: string]: {vote: string; reason: string}}, actors: ActorWithStateAndOffices[]) => {
-  return tallyVotes(Object.keys(votes).map(x => ({actorId: x, motionId: 'LIES', ...votes[x]})), actors);
 }
 
 export const getDesiredOffers = (actor: ActorWithStateAndOffices & {position: string, approval: number}, motion: Motion & {tabledBy: string}, actors: any[], currentVotes: {[actorId: string]: VoteData}, currentOffers: {[actorId: string]: Vote[]}) => {
@@ -122,12 +128,6 @@ export const getDesiredOffers = (actor: ActorWithStateAndOffices & {position: st
 
   return desiredOffers;
 };
-
-export const returnStandardVotes = (includeAbstainOption = false) => {
-  const basic = [{key: 'yea', color: 'success'}, {key: 'nay', color: 'danger'}];
-  const abstain = {key: 'abstrain', color: 'secondary'};
-  return [...basic, ...(includeAbstainOption ? [abstain] : []) ]
-}
 
 export const getActorApproval = (actor: ActorWithState, motion: Motion) => {
   let approval = 0;

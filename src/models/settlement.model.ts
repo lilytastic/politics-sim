@@ -1,5 +1,7 @@
 import { PoliticalOffice } from "./politicalOffice.model";
 import { ActorPoliticalStatus } from "./actor.model";
+import { Vote } from "./vote.model";
+import { Motion } from "./motion.model";
 
 export interface SettlementBaseData {
 	id: string;
@@ -12,6 +14,12 @@ export interface SettlementState {
 	offices: {[id: string]: PoliticalOffice};
 	actorPositions: {[actorId: string]: ActorPoliticalStatus}
 	standardPositions: PoliticalOffice[];
+	availableMotions: Motion[];
+	motionsTabled: {id: string; tabledBy: string}[];
+	currentVoteOffers: {[actorId: string]: Vote[]};
+	motionVotes: {[motionId: string]: {[actorId: string]: {vote: string, purchaseAgreement?: {purchasedBy: string, amountSpent: number}, reason: string}}};
+	currentPhase: number;
+	currentPhaseCountdown: number;
 	officeOccupants: {[id: string]: string};
 }
 

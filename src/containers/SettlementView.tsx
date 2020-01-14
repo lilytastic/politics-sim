@@ -44,7 +44,7 @@ const mapStateToProps = (state: State) => {
   Object.keys(profile).forEach(x => profile[x] = Math.max(0, profile[x]));
   return {
     settlement: {...settlement, derived: {profile: profile}},
-    phase: state.phases[state.saveData.currentPhase || 0],
+    phase: state.phases[settlement.state.currentPhase || 0],
     policies: state.policies,
   }
 };

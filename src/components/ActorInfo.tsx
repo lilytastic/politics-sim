@@ -51,11 +51,12 @@ export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion}:
 }
 
 const mapStateToProps = (state: State) => {
+  const settlementState = state.saveData.settlementState['test'];
   return {
     actors: state.actors,
-    phase: state.phases[state.saveData.currentPhase || 0],
-    motionVotes: state.saveData.motionVotes,
-    currentVoteOffers: state.saveData.currentVoteOffers,
+    phase: state.phases[settlementState.currentPhase || 0],
+    motionVotes: settlementState.motionVotes,
+    currentVoteOffers: settlementState.currentVoteOffers,
     inspectedMotion: state.saveData.inspectedMotion
   }
 };

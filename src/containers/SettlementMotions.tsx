@@ -27,12 +27,12 @@ class SettlementMotions extends React.Component {
       return;
     }
     if (!tabled && actor.state.capital >= motion.costToTable) {
-      this.props.dispatch(tableMotion(motionId, actor.id));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}));
+      this.props.dispatch(tableMotion(motionId, actor.id, 'test'));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}, 'test'));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
     } else if (!!tabled && tabled.tabledBy === actor.id) {
-      this.props.dispatch(rescindMotion(motionId));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}));
+      this.props.dispatch(rescindMotion(motionId, 'test'));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}, 'test'));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
     }
   };
@@ -49,7 +49,7 @@ class SettlementMotions extends React.Component {
       motionId: motionId,
       vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
       reason: 'freely'
-    }));
+    }, 'test'));
     console.log('voting', motionId);
   };
 
@@ -62,7 +62,7 @@ class SettlementMotions extends React.Component {
       vote: vote,
       reason: 'bought',
       purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}
-    }));
+    }, 'test'));
   }
 
   getOffers = (motion: Motion, vote: string) => {
@@ -147,12 +147,12 @@ const mapStateToProps = (state: State) => {
   return {
     actors: actors,
     player: actors.find((x: any) => x.id === 'player') || actors[0],
-    phase: state.phases[state.saveData.currentPhase || 0],
-    motionsTabled: state.saveData.motionsTabled,
-    motionVotes: state.saveData.motionVotes,
-    currentVoteOffers: state.saveData.currentVoteOffers,
+    phase: state.phases[settlement.state.currentPhase || 0],
+    motionsTabled: settlement.state.motionsTabled,
+    motionVotes: settlement.state.motionVotes,
+    currentVoteOffers: settlement.state.currentVoteOffers,
     inspectedMotion: state.saveData.inspectedMotion,
-    availableMotions: state.saveData.availableMotions
+    availableMotions: settlement.state.availableMotions
   }
 };
 

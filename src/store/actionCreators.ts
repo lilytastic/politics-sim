@@ -1,21 +1,10 @@
-import { ActorBaseData, ActorState, ActorWithState } from "../models/actor.model";
+import { ActorState, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
 import { Vote } from "../models/vote.model";
 
 export const changeScreen = (screen: string) => ({
   type: 'CHANGE_SCREEN',
   screen: screen
-});
-export const changeCurrentPhase = (currentPhase: number) => ({
-  type: 'CHANGE_CURRENT_PHASE',
-  currentPhase
-});
-export const changeCurrentPhaseCountdown = (currentPhaseCountdown: number) => ({
-  type: 'CHANGE_CURRENT_PHASE_COUNTDOWN',
-  currentPhaseCountdown
-});
-export const refreshAvailableMotions = () => ({
-  type: 'REFRESH_AVAILABLE_MOTIONS'
 });
 
 export const addAlert = (alert: {type: string; text: string;}) => ({
@@ -33,38 +22,59 @@ export const inspectMotion = (motion: string) => ({
   motion
 });
 
-export const passMotion = (motion: Motion) => ({
-  type: 'PASS_MOTION',
-  motion
+export const changeCurrentPhase = (currentPhase: number, settlementId: string) => ({
+  type: 'CHANGE_CURRENT_PHASE',
+  currentPhase,
+  settlementId
+});
+export const changeCurrentPhaseCountdown = (currentPhaseCountdown: number, settlementId: string) => ({
+  type: 'CHANGE_CURRENT_PHASE_COUNTDOWN',
+  currentPhaseCountdown,
+  settlementId
+});
+export const refreshAvailableMotions = (settlementId: string) => ({
+  type: 'REFRESH_AVAILABLE_MOTIONS',
+  settlementId
 });
 
-export const addOffers = (offers: Vote[]) => ({
+export const passMotion = (motion: Motion, settlementId: string) => ({
+  type: 'PASS_MOTION',
+  motion,
+  settlementId
+});
+
+export const addOffers = (offers: Vote[], settlementId: string) => ({
   type: 'ADD_VOTE_OFFERS',
-  offers
+  offers,
+  settlementId
 })
-export const setOffers = (offers: {[id: string]: Vote[]}) => ({
+export const setOffers = (offers: {[id: string]: Vote[]}, settlementId: string) => ({
   type: 'SET_VOTE_OFFERS',
-  offers
+  offers,
+  settlementId
 })
 
-export const tableMotion = (motion: string, tabledBy: string) => ({
+export const tableMotion = (motion: string, tabledBy: string, settlementId: string) => ({
   type: 'TABLE_MOTION',
   motion,
-  tabledBy
+  tabledBy,
+  settlementId
 });
-
-export const rescindMotion = (motion: string) => ({
+export const rescindMotion = (motion: string, settlementId: string) => ({
   type: 'RESCIND_MOTION',
-  motion
+  motion,
+  settlementId
 });
 
-export const changeVote = (change: Vote) => ({
+export const changeVote = (change: Vote, settlementId: string) => ({
   type: 'CHANGE_VOTE',
-  change
+  change,
+  settlementId
 })
-export const changeVotes = (changes: Vote[]) => ({
+export const changeVotes = (changes: Vote[], settlementId: string) => ({
   type: 'CHANGE_VOTES',
-  changes
+  changes,
+  settlementId
 })
 
 export const loadSave = (data: any) => ({type: 'LOAD_SAVE', data})
