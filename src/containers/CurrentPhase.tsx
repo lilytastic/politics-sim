@@ -15,9 +15,11 @@ const CurrentPhase = ({ phase, currentPhaseCountdown }: any) => {
 };
 
 const mapStateToProps = (state: State) => {
-  const settlementState = state.saveData.settlementState['test'];
+  const settlementId = 'test';
+  const settlementState = state.saveData.settlementState[settlementId];
   return {
     phase: state.phases[settlementState.currentPhase || 0],
+    currentSettlement: settlementState,
     currentPhaseCountdown: settlementState.currentPhaseCountdown
   }
 };

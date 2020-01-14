@@ -6,6 +6,7 @@ import { SettlementProfile } from './SettlementProfile';
 import CurrentPhase from './CurrentPhase';
 import SettlementCircle from './SettlementCircle';
 import SettlementMotions from './SettlementMotions';
+import { SettlementWithState } from '../models/settlement.model';
 
 export const SettlementView = ({settlement, policies, phase}: Props) => {
   return (
@@ -14,16 +15,16 @@ export const SettlementView = ({settlement, policies, phase}: Props) => {
       <SettlementProfile settlement={settlement} policies={policies}></SettlementProfile>
 
       <h2 className="mt-5 mb-2">Politics</h2>
-      <CurrentPhase></CurrentPhase>
+      <CurrentPhase settlement={settlement}></CurrentPhase>
       <div className="row mt-3">
         <div className="col-5">
           <h3 className="mb-3">Circle</h3>
-          <SettlementCircle></SettlementCircle>
+          <SettlementCircle settlement={settlement}></SettlementCircle>
         </div>
         <div className="col-7">
           <h3 className="mb-3">{phase?.id === 'table' ? 'Opportunities' : 'Measures'}</h3>
           <div style={{minHeight: '800px'}}>
-            <SettlementMotions></SettlementMotions>
+            <SettlementMotions settlement={settlement}></SettlementMotions>
           </div>
         </div>
       </div>
@@ -31,8 +32,8 @@ export const SettlementView = ({settlement, policies, phase}: Props) => {
   );
 }
 
-const mapStateToProps = (state: State) => {
-  const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
+const mapStateToProps = (state: State, ownProps: {settlement: SettlementWithState}) => {
+  const settlement = ownProps.settlement;
   const profile: {[id: string]: number} = {purpose: 0, charity: 0, education: 0, openness: 0, dignity: 0, joy: 0, creativity: 0, vigilance: 0};
   Object.keys(settlement.state.policies).forEach(policyId => {
     const stance = settlement.state.policies[policyId];

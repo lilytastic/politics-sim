@@ -1,13 +1,13 @@
 import React from 'react';
 import { StatIcon } from '../components/StatIcon';
-import { returnActorWithState, returnActorWithStateAndOffices } from '../models/actor.model';
-import { getAssociatedVoteColor, getCostToInfluence, getActorApproval } from '../helpers/politics.helpers';
-import { getById } from '../helpers/entity.helpers';
+import { returnActorWithStateAndOffices } from '../models/actor.model';
+import { getCostToInfluence, getActorApproval } from '../helpers/politics.helpers';
 import { State } from '../store/reducers';
 import { changeVote } from '../store/actionCreators';
 import { connect, ConnectedProps } from 'react-redux';
 import FlipMove from 'react-flip-move';
 import ActorInfo from '../components/ActorInfo';
+import { SettlementWithState } from '../models/settlement.model';
 
 class SettlementCircle extends React.Component {
   // @ts-ignore;
@@ -20,7 +20,7 @@ class SettlementCircle extends React.Component {
       vote: vote,
       reason: 'bought',
       purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}
-    }, 'test'));
+    }, this.props.settlement?.id || ''));
   }
 
   render = () => (
@@ -59,23 +59,25 @@ class SettlementCircle extends React.Component {
   )
 }
 
-const mapStateToProps = (state: State) => {
-  const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
+const mapStateToProps = (state: State, ownProps: {settlement: SettlementWithState}) => {
+  const settlement = ownProps.settlement;
 
-  const actors = state.actors
-    .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
-    .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
+  const actors = !!settlement
+    ? state.actors
+      .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
+      .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1)
+    : [];
 
   return {
     actors: actors,
     settlement: settlement,
-    phase: state.phases[settlement.state.currentPhase || 0],
+    phase: state.phases[settlement?.state.currentPhase || 0],
     player: actors.find((x: any) => x.id === 'player') || actors[0],
-    motionsTabled: settlement.state.motionsTabled,
-    motionVotes: settlement.state.motionVotes,
-    currentVoteOffers: settlement.state.currentVoteOffers,
+    motionsTabled: settlement?.state.motionsTabled || [],
+    motionVotes: settlement?.state.motionVotes || {},
+    currentVoteOffers: settlement?.state.currentVoteOffers || {},
     inspectedMotion: state.saveData.inspectedMotion,
-    availableMotions: settlement.state.availableMotions
+    availableMotions: settlement?.state.availableMotions || []
   }
 };
 

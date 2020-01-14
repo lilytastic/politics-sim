@@ -42,12 +42,12 @@ class Game extends React.Component {
       return;
     }
     if (!tabled && actor.state.capital >= motion.costToTable) {
-      this.props.dispatch(tableMotion(motionId, actor.id, 'test'));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}, 'test'));
+      this.props.dispatch(tableMotion(motionId, actor.id, this.props.settlement.id));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}, this.props.settlement.id));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
     } else if (!!tabled && actor.id === this.props.player.id && tabled.tabledBy === actor.id) {
-      this.props.dispatch(rescindMotion(motionId, 'test'));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}, 'test'));
+      this.props.dispatch(rescindMotion(motionId, this.props.settlement.id));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}, this.props.settlement.id));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
     }
   };
@@ -65,7 +65,7 @@ class Game extends React.Component {
     if (this.props.currentPhaseCountdown >= this.props.phase?.countdown - 1) {
       this.advancePhase();
     } else {
-      this.props.dispatch(changeCurrentPhaseCountdown(this.props.currentPhaseCountdown + 1, 'test'));
+      this.props.dispatch(changeCurrentPhaseCountdown(this.props.currentPhaseCountdown + 1, this.props.settlement.id));
     }
   }
 
@@ -80,14 +80,14 @@ class Game extends React.Component {
     switch (currentPhase?.id) {
       case 'table':
         if (!this.props.motionsTabled.length) {
-          this.props.dispatch(changeCurrentPhaseCountdown(0, 'test'));
+          this.props.dispatch(changeCurrentPhaseCountdown(0, this.props.settlement.id));
         }
         break;
       case 'vote':
         this.handleResults();
         break;
     }
-    this.props.dispatch(changeCurrentPhase((this.props.currentPhase + 1) % this.props.phases.length, 'test'));
+    this.props.dispatch(changeCurrentPhase((this.props.currentPhase + 1) % this.props.phases.length, this.props.settlement.id));
 
     const newPhase = this.props.phase;
     if (newPhase?.id === 'table') {
@@ -129,7 +129,7 @@ class Game extends React.Component {
       .map(motion => (motion ? {...motion, tabledBy: this.props.motionsTabled.find(x => x.id == motion.id)?.tabledBy} : undefined))
       .forEach(motion => {
         if (!!motion) {
-          this.props.dispatch(passMotion(motion, 'test'));
+          this.props.dispatch(passMotion(motion, this.props.settlement.id));
           if (!!motion.tabledBy) {
             const actor = this.props.actors.find(x => x.id === motion.tabledBy);
             console.log(`${actor?.name} received ${motion.rewardForPassing} as a reward for passing ${motion.name}`);
@@ -141,7 +141,7 @@ class Game extends React.Component {
 
   returnToTablePhase = () => {
     this.grantAllowance();
-    this.props.dispatch(refreshAvailableMotions('test'));
+    this.props.dispatch(refreshAvailableMotions(this.props.settlement.id));
     timer(5000).subscribe(() => {
       const actors = this.props?.actors.filter(x => x.id !== this.props.player.id);
       this.props.availableMotions.forEach((motion: Motion) => {
@@ -186,7 +186,7 @@ class Game extends React.Component {
               motionId: motion.id,
               vote: actor.position,
               reason: 'freely'
-            }, 'test'));
+            }, this.props.settlement.id));
           });
         });
     });
@@ -203,7 +203,7 @@ class Game extends React.Component {
           timer(Math.random() * duration).subscribe(() => {
             const desiredOffers = getDesiredOffers(actor, motion, actors, this.props?.motionVotes[motion.id], this.props?.currentVoteOffers);
             if (desiredOffers.length > 0) {
-              this.props.dispatch(addOffers(desiredOffers, 'test'));
+              this.props.dispatch(addOffers(desiredOffers, this.props.settlement.id));
             }
           });
         });
@@ -227,7 +227,7 @@ class Game extends React.Component {
               const purchaser = this.props.actors.find(x => x.id === topOffer.purchaseAgreement?.purchasedBy);
               const amountSpent = topOffer.purchaseAgreement?.amountSpent || 0;
               if (purchaser && purchaser.state.capital >= amountSpent && !(existingVote?.purchaseAgreement)) {
-                this.props.dispatch(changeVote(topOffer, 'test'));
+                this.props.dispatch(changeVote(topOffer, this.props.settlement.id));
                 console.log(`${actor.name} agreed to vote ${topOffer.vote} on ${motion.name} for ${purchaser.name} in exchange for ${amountSpent}`);
               }
             }
@@ -263,7 +263,7 @@ class Game extends React.Component {
           ))}
         </div>
         <div onClick={() => {this.props.dispatch(inspectMotion(''))}} className={"fade--full" + (!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? ' active' : '')}></div>
-        <SettlementView></SettlementView>
+        {!!this.props.settlement && <SettlementView settlement={this.props.settlement}></SettlementView>}
       </div>
     </div>
   );
@@ -283,6 +283,7 @@ const mapStateToProps = (state: State) => {
     player: actors.find((x: any) => x.id === 'player') || actors[0],
     motionsTabled: settlement.state.motionsTabled,
     motionVotes: settlement.state.motionVotes,
+    settlement: settlement,
     currentVoteOffers: settlement.state.currentVoteOffers,
     currentPhaseCountdown: settlement.state.currentPhaseCountdown,
     currentPhase: settlement.state.currentPhase,

@@ -10,6 +10,7 @@ import { Motion } from '../models/motion.model';
 import { returnStandardVotes } from '../helpers/politics.helpers';
 import { Vote } from '../models/vote.model';
 import FlipMove from 'react-flip-move';
+import { SettlementWithState } from '../models/settlement.model';
 
 class SettlementMotions extends React.Component {
   // @ts-ignore;
@@ -27,12 +28,12 @@ class SettlementMotions extends React.Component {
       return;
     }
     if (!tabled && actor.state.capital >= motion.costToTable) {
-      this.props.dispatch(tableMotion(motionId, actor.id, 'test'));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}, 'test'));
+      this.props.dispatch(tableMotion(motionId, actor.id, this.props.settlement.id));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'yea', reason: 'freely'}, this.props.settlement.id));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital - motion.costToTable}}]));
     } else if (!!tabled && tabled.tabledBy === actor.id) {
-      this.props.dispatch(rescindMotion(motionId, 'test'));
-      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}, 'test'));
+      this.props.dispatch(rescindMotion(motionId, this.props.settlement.id));
+      this.props.dispatch(changeVote({actorId: actor.id, motionId: motionId, vote: 'abstain', reason: 'freely'}, this.props.settlement.id));
       this.props.dispatch(updateActors([{id: actor.id, changes: {capital: actor.state.capital + motion.costToTable}}]));
     }
   };
@@ -49,7 +50,7 @@ class SettlementMotions extends React.Component {
       motionId: motionId,
       vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
       reason: 'freely'
-    }, 'test'));
+    }, this.props.settlement.id));
     console.log('voting', motionId);
   };
 
@@ -62,7 +63,7 @@ class SettlementMotions extends React.Component {
       vote: vote,
       reason: 'bought',
       purchaseAgreement: {purchasedBy: 'player', amountSpent: amountSpent}
-    }, 'test'));
+    }, this.props.settlement.id));
   }
 
   getOffers = (motion: Motion, vote: string) => {
@@ -137,15 +138,18 @@ class SettlementMotions extends React.Component {
   )
 }
 
-const mapStateToProps = (state: State) => {
-  const settlement = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}))[0];
+const mapStateToProps = (state: State, ownProps: {settlement: SettlementWithState}) => {
+  const settlement = ownProps.settlement;
 
-  const actors = state.actors
-    .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
-    .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1);
+  const actors = !!settlement
+    ? state.actors
+      .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))
+      .sort((a, b) => Math.max(...a.offices.map(x => x.softCapitalCap)) > Math.max(...b.offices.map(x => x.softCapitalCap)) ? -1 : 1)
+    : [];
 
   return {
     actors: actors,
+    settlement: settlement,
     player: actors.find((x: any) => x.id === 'player') || actors[0],
     phase: state.phases[settlement.state.currentPhase || 0],
     motionsTabled: settlement.state.motionsTabled,
