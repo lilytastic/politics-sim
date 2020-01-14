@@ -1,7 +1,6 @@
 import { Motion } from "../models/motion.model";
 import { ActorWithState, ActorWithStateAndOffices } from "../models/actor.model";
 import { stats } from "../models/stats.model";
-import { SettlementState } from "../models/settlement.model";
 import { Vote, VoteData } from "../models/vote.model";
 
 export function getAssociatedVoteColor(vote: string) {

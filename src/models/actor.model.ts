@@ -1,5 +1,5 @@
 import { PoliticalOffice } from "./politicalOffice.model";
-import { SettlementState, SettlementWithState } from "./settlement.model";
+import { SettlementWithState } from "./settlement.model";
 
 export interface ActorBaseData {
   id: string;

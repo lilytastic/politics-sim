@@ -238,31 +238,15 @@ class Game extends React.Component {
 
   render = () => (
     <div>
-      <nav className="navbar py-1 px-0 sticky-top navbar-dark bg-dark">
-        <div className="container px-4">
-          <ul className="navbar-nav mr-auto">
-            <li className="nav-item">
-              <span className="navbar-text font-weight-bold">
-                Qui'shon
-              </span>
-            </li>
-          </ul>
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <span className="navbar-text">
-                <StatIcon stat="capital" value={this.props.player?.state.capital}></StatIcon>
-              </span>
-            </li>
-          </ul>
-        </div>
-      </nav>
+      <Navbar player={this.props.player}></Navbar>
+      <div onClick={() => {this.props.dispatch(inspectMotion(''))}} className={"fade--full" + (this.props.inspectedMotion !== '' ? ' active' : '')}></div>
       <div className="p-4 container bg-light">
         <div>
           {false && this.props?.notifications.map((x, i) => (
             <div className={`alert alert-${x.type}`}>{x.text}</div>
           ))}
         </div>
-        <div onClick={() => {this.props.dispatch(inspectMotion(''))}} className={"fade--full" + (!!this.props.availableMotions.find(x => x.id === this.props.inspectedMotion) ? ' active' : '')}></div>
+
         {!!this.props.settlement && <SettlementView settlement={this.props.settlement}></SettlementView>}
       </div>
     </div>
