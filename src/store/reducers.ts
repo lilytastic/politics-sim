@@ -2,11 +2,11 @@ import { ActorBaseData, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
 import { PolicyBaseData } from "../models/policy.model";
 import * as Policies from "../content/policies.json";
-import { SettlementState, SettlementBaseData } from "../models/settlement.model";
+import { SettlementBaseData } from "../models/settlement.model";
 import { POLITICAL_STRUCTURE_TRIBAL } from "../content/politicalStructure.const";
 import { Vote } from "../models/vote.model";
 import { SaveData } from "../models/save-data.model";
-import { Phase, PHASES } from "../models/phase.model";
+import { PHASES } from "../models/phase.model";
 
 declare global {
   interface Array<T> {
@@ -283,6 +283,7 @@ export function rootReducer(state = initialState, action: any): State {
     case 'CHANGE_CURRENT_PHASE': {
       const settlementState = {...state.saveData.settlementState};
       settlementState[action.settlementId].currentPhase = action.currentPhase;
+      settlementState[action.settlementId].currentPhaseCountdown = 0;
       return { ...state, saveData: {...state.saveData, settlementState }};
     }
     case 'CHANGE_CURRENT_PHASE_COUNTDOWN': {

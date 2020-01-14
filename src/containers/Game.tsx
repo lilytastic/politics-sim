@@ -77,7 +77,7 @@ class Game extends React.Component {
     switch (currentPhase?.id) {
       case 'table':
         if (!this.props.motionsTabled.length) {
-          this.props.dispatch(changeCurrentPhaseCountdown(0, this.props.settlement.id));
+          this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
         } else {
           this.props.dispatch(changeCurrentPhase(PHASES.VOTE, this.props.settlement.id));
         }
