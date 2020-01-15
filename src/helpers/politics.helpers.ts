@@ -69,7 +69,7 @@ export const getDesiredOffers = (actor: ActorWithStateAndOffices & {position: st
   const desiredOffers: Vote[] = [];
 
   const actorsToBuyFrom = actors
-    .filter(x => x.id !== motion.tabledBy && x.voteWeight > 0 && x.id !== actor.id && (currentVotes[actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
+    .filter(x => x.id !== x.voteWeight > 0 && x.id !== actor.id && motion.tabledBy && (currentVotes[actor.id]?.purchaseAgreement || Math.sign(actor.approval) !== Math.sign(x.approval)) ) // to filter ones who are already voting this way
     .shuffle()
     .sort((a, b) => a.costToInfluence[actor.position] < b.costToInfluence[actor.position] ? 1 : -1);
 

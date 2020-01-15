@@ -33,9 +33,10 @@ export const changeCurrentPhaseCountdown = (currentPhaseCountdown: number, settl
   currentPhaseCountdown,
   settlementId
 });
-export const refreshAvailableMotions = (settlementId: string) => ({
+export const refreshAvailableMotions = (repeat: boolean, settlementId: string) => ({
   type: 'REFRESH_AVAILABLE_MOTIONS',
-  settlementId
+  settlementId,
+  isRepeat: repeat
 });
 
 export const passMotion = (motion: Motion, settlementId: string) => ({

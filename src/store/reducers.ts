@@ -2,7 +2,7 @@ import { ActorBaseData, ActorWithState } from "../models/actor.model";
 import { Motion } from "../models/motion.model";
 import { PolicyBaseData } from "../models/policy.model";
 import * as Policies from "../content/policies.json";
-import { SettlementBaseData } from "../models/settlement.model";
+import { SettlementBaseData, SettlementState } from "../models/settlement.model";
 import { POLITICAL_STRUCTURE_TRIBAL } from "../content/politicalStructure.const";
 import { Vote } from "../models/vote.model";
 import { SaveData } from "../models/save-data.model";
@@ -284,8 +284,14 @@ export function rootReducer(state = initialState, action: any): State {
       return { ...state, screen: action.screen };
     case 'CHANGE_CURRENT_PHASE': {
       const settlementState = {...state.saveData.settlementState};
-      settlementState[action.settlementId].currentPhase = action.currentPhase;
-      settlementState[action.settlementId].currentPhaseCountdown = 0;
+      settlementState[action.settlementId] = {
+        ...settlementState[action.settlementId],
+        motionVotes: (settlementState[action.settlementId].currentPhase?.id !== PHASES.TABLE.id && action.currentPhase?.id === PHASES.TABLE.id)
+          ? {}
+          : settlementState[action.settlementId].motionVotes,
+        currentPhase: action.currentPhase,
+        currentPhaseCountdown: 0
+      };
       return { ...state, saveData: {...state.saveData, settlementState }};
     }
     case 'CHANGE_CURRENT_PHASE_COUNTDOWN': {
@@ -294,12 +300,12 @@ export function rootReducer(state = initialState, action: any): State {
       return { ...state, saveData: {...state.saveData, settlementState }};
     }
     case 'REFRESH_AVAILABLE_MOTIONS': {
-      let motions: Motion[] = [];
-      const settlementState = {...state.saveData.settlementState};
+      let settlementState: SettlementState = {...state.saveData.settlementState[action.settlementId]};
       const possibleMotions: Motion[] = [];
+      let motions: Motion[] = action.isRepeat ? [...settlementState.availableMotions.filter(x => !!settlementState.motionsTabled.find(y => y.id === x.id))] : [];
 
       state.policies.forEach(policy => {
-        const existingStance = settlementState[action.settlementId]?.policies[policy.id];
+        const existingStance = settlementState?.policies[policy.id];
         if (policy.canBeRepealed && existingStance) {
           const effects = policy.stances[existingStance].effects.map(x => ({stat: x.stat, amount: -x.amount}));
           const effectCost = effects.reduce((acc, curr) => {
@@ -345,22 +351,24 @@ export function rootReducer(state = initialState, action: any): State {
         });
       });
 
-      motions = possibleMotions.filter(x => x.effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) > 0).shuffle().slice(0, 6);
+      motions = [...motions, ...possibleMotions.filter(x => !motions.find(y => y.id === x.id) && x.effects.reduce((acc, curr) => acc + Math.abs(curr.amount), 0) > 0).shuffle().slice(0, 6)];
+      // console.log(motions);
 
-      settlementState[action.settlementId] = {
-        ...settlementState[action.settlementId],
-        motionsTabled: [],
-        motionVotes: {},
+      settlementState = {
+        ...settlementState,
         currentVoteOffers: {},
+        motionsTabled: action.isRepeat ? settlementState.motionsTabled: [],
         availableMotions: motions
       }
+      const newState = {...state.saveData.settlementState};
+      newState[action.settlementId] = settlementState;
 
       return {
         ...state,
         saveData: {
           ...state.saveData,
           inspectedMotion: '',
-          settlementState
+          settlementState: newState
         }
       };
     }

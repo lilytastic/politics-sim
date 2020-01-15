@@ -52,9 +52,6 @@ class SettlementMotions extends React.Component {
       vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
       reason: 'freely'
     }, this.props.settlement.id));
-    if (checkIfFullyTallied(this.props.motionVotes, this.props.actors)) {
-      // TODO: last vote was the player's -- skip to whatever.
-    }
     console.log('voting', motionId);
   };
 
@@ -154,7 +151,7 @@ class SettlementMotions extends React.Component {
               }
             </MotionInfo>
             <div className="btn-overlay btn-overlay--yea" style={{width: `${this.getVotePercentage('yea', motion)}%`, right: 'unset'}}></div>
-            <div className="btn-overlay btn-overlay--abstain" style={{width: `${this.getVotePercentage('abstain', motion)}%`, left: `${this.getVotePercentage('yea', motion)}%`, right: 'unset'}}></div>
+            <div className="btn-overlay btn-overlay--abstain" style={{width: `${this.getVotePercentage('abstain', motion)}%`, right: `${this.getVotePercentage('nay', motion)}%`, left: 'unset'}}></div>
             <div className="btn-overlay btn-overlay--nay" style={{width: `${this.getVotePercentage('nay', motion)}%`, left: 'unset'}}></div>
           </button>
           {(this.props.phase?.id === 'vote' && this.props.player?.voteWeight > 0) && (

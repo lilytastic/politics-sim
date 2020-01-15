@@ -11,7 +11,7 @@ import { Vote } from '../models/vote.model';
 import { calculateActorCapitalWithAllowance } from '../helpers/actor.helpers';
 import SettlementView from './SettlementView';
 import { Navbar } from '../components/Navbar';
-import { PHASES } from '../models/phase.model';
+import { PHASES, Phase } from '../models/phase.model';
 
 // Current Phase: {this.props.phase.name} ({this.props.phase.countdown - currentPhaseCountdown}s) {currentPhaseCountdown}
 
@@ -24,7 +24,7 @@ class Game extends React.Component {
     super(props);
     props.dispatch(loadActorsWithDefaultState(actors));
     window.requestAnimationFrame(() => {
-      this.returnToTablePhase();
+      this.returnToTablePhase(false);
     });
 
     interval(1000).subscribe(x => {
@@ -74,22 +74,29 @@ class Game extends React.Component {
   }
 
   advancePhase = () => {
+    let newPhase: Phase | undefined;
     const currentPhase = this.props.phase;
+    let isRepeatingTablePhase = false;
     switch (currentPhase?.id) {
       case 'table':
-        if (!this.props.motionsTabled.length) {
-          this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
+        if (this.props.motionsTabled.length < 5) {
+          newPhase = PHASES.TABLE;
+          isRepeatingTablePhase = true;
         } else {
-          this.props.dispatch(changeCurrentPhase({...PHASES.VOTE, countdown: 15 + this.props.motionsTabled.length * 15}, this.props.settlement.id));
+          newPhase = {...PHASES.VOTE, countdown: 15 + this.props.motionsTabled.length * 15};
         }
         break;
       case 'vote':
         this.handleResults();
-        this.props.dispatch(changeCurrentPhase(PHASES.RESULTS, this.props.settlement.id));
+        newPhase = PHASES.RESULTS;
         break;
       case 'results':
-        this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
+        newPhase = PHASES.TABLE;
         break;
+    }
+
+    if (!!newPhase) {
+      this.props.dispatch(changeCurrentPhase(newPhase, this.props.settlement.id));
     }
 
     this.subscriptions.forEach(x => {
@@ -97,12 +104,21 @@ class Game extends React.Component {
     });
     this.subscriptions = [];
 
-    const newPhase = this.props.phase;
-    if (newPhase?.id === 'table') {
-      this.returnToTablePhase();
+    if (newPhase?.id === PHASES.TABLE.id) {
+      this.returnToTablePhase(isRepeatingTablePhase);
     }
-    if (newPhase?.id === 'vote') {
-      this.actorsVote();
+    if (newPhase?.id === PHASES.VOTE.id) {
+      const voteTime = this.props.phase.countdown * 1000 * 0.4;
+      const makeOfferTime = this.props.phase.countdown * 1000 * 0.2;
+      this.subscriptions.push(
+        timer(100).subscribe(() => {
+          console.log('makeOffer!');
+          this.npcsMakeOffers(makeOfferTime);
+          timer(makeOfferTime).subscribe(() => {
+            this.npcsVote(voteTime);
+          });
+        })
+      );
     }
   }
 
@@ -147,9 +163,9 @@ class Game extends React.Component {
       });
   };
 
-  returnToTablePhase = () => {
+  returnToTablePhase = (repeat: boolean) => {
     this.grantAllowance();
-    this.props.dispatch(refreshAvailableMotions(this.props.settlement.id));
+    this.props.dispatch(refreshAvailableMotions(repeat, this.props.settlement.id));
     this.subscriptions.push(
       timer(this.props.phase.countdown * 0.25 * 1000).subscribe(() => {
         const actors = this.props?.actors.filter(x => x.id !== this.props.player.id);
@@ -178,18 +194,6 @@ class Game extends React.Component {
       this.advancePhase();
     }
     // this.props.dispatch(changeCurrentPhaseCountdown(Math.min(this.props.currentPhaseCountdown, 3), this.props.settlement.id));
-  }
-
-  actorsVote = () => {
-    const idleTime = this.props.phase.countdown * 1000 * 0.0;
-    const voteTime = this.props.phase.countdown * 1000 * 0.4;
-    const makeOfferTime = this.props.phase.countdown * 1000 * 0.2;
-    timer(idleTime).subscribe(() => {
-      this.npcsMakeOffers(makeOfferTime);
-      timer(makeOfferTime).subscribe(() => {
-        this.npcsVote(voteTime);
-      });
-    });
   }
 
   npcsVote = (duration: number) => {
@@ -226,6 +230,7 @@ class Game extends React.Component {
   }
 
   npcsMakeOffers = (duration: number) => {
+    console.log('make offers');
     this.getTabledMotions().forEach(motion => {
       // This is all the AI actors who are passionately involved and willing to make offers
       const actors = getActorsWithApproval(this.props?.actors, motion)
@@ -233,14 +238,10 @@ class Game extends React.Component {
         .filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3)
         .reverse()
         .forEach(actor => {
-          this.subscriptions.push(
-            timer(Math.random() * duration).subscribe(() => {
-              const desiredOffers = getDesiredOffers(actor, motion, actors, this.props?.motionVotes[motion.id], this.props?.currentVoteOffers);
-              if (desiredOffers.length > 0) {
-                this.props.dispatch(addOffers(desiredOffers, this.props.settlement.id));
-              }
-            })
-          );
+          const desiredOffers = getDesiredOffers(actor, motion, actors, this.props.motionVotes[motion.id] || {}, this.props.currentVoteOffers);
+          if (desiredOffers.length > 0) {
+            this.props.dispatch(addOffers(desiredOffers, this.props.settlement.id));
+          }
         });
     });
   }
