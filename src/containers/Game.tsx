@@ -191,7 +191,11 @@ class Game extends React.Component {
 
   componentDidUpdate = (props: any) => {
     if (this.props.phase?.id === PHASES.VOTE.id && checkIfFullyTallied(this.props.motionVotes, this.props.actors)) {
-      this.advancePhase();
+      this.subscriptions.push(
+        timer(1500).subscribe(x => {
+          this.advancePhase();
+        })
+      )
     }
     // this.props.dispatch(changeCurrentPhaseCountdown(Math.min(this.props.currentPhaseCountdown, 3), this.props.settlement.id));
   }

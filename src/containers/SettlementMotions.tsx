@@ -119,9 +119,34 @@ class SettlementMotions extends React.Component {
       else if (vote === 'nay') {return nay / (yea + nay) * 100;}
       else {return 0;}
     }
-    const numberOfVoters = this.props.actors.reduce((acc, curr) => acc + curr.voteWeight, 0);
-    return Object.keys(this.props.motionVotes[motion.id] || {})
-      .reduce((acc, curr) => acc + (this.props.motionVotes[motion.id][curr]?.vote === vote ? (this.props.actors.find(x => x.id === curr)?.voteWeight || 0) : 0), 0) / numberOfVoters * 100;
+    const numberOfVoters = this.props.actors.reduce((acc, curr) => acc + (this.props.motionVotes[motion.id]?.[curr.id]?.vote !== 'abstain' ? curr.voteWeight : 0), 0);
+    const voteTally = Object.keys(this.props.motionVotes[motion.id] || {})
+      .reduce((acc, curr) => (
+        acc + (this.props.motionVotes[motion.id][curr]?.vote === vote ? (this.props.actors.find(x => x.id === curr)?.voteWeight || 0) : 0)),
+        0
+      );
+    return voteTally / numberOfVoters * 100;
+  }
+
+  getOverlayOpacity = (motion: Motion, vote: string) => {
+    switch (this.props.phase?.id) {
+      case PHASES.VOTE.id: {
+        const yea = this.getVotes(motion, 'yea', true);
+        const nay = this.getVotes(motion, 'nay', true);
+        if (vote === 'yea' && yea > nay) {return 0.35;}
+        else if (vote === 'nay' && yea <= nay) {return 0.35;}
+        else {return 0.2;}
+      }//   return (this.props.motionVotes[motion.id]['player']?.vote === 'vote') ? 0.3 : 0.2;
+      case PHASES.RESULTS.id: {
+        const yea = this.getVotes(motion, 'yea', true);
+        const nay = this.getVotes(motion, 'nay', true);
+        if (vote === 'yea' && yea > nay) {return 0.35;}
+        else if (vote === 'nay' && yea <= nay) {return 0.35;}
+        else {return 0;}
+      }
+      default:
+        return 0.2;
+    }
   }
 
   render = () => (
@@ -149,13 +174,15 @@ class SettlementMotions extends React.Component {
                 </span>
               }
             </MotionInfo>
-            <div className="btn-overlay btn-overlay--yea" style={{width: `${this.getVotePercentage('yea', motion)}%`, right: 'unset'}}></div>
-            <div className="btn-overlay btn-overlay--abstain" style={{width: `${this.getVotePercentage('abstain', motion)}%`, right: `${this.getVotePercentage('nay', motion)}%`, left: 'unset'}}></div>
-            <div className="btn-overlay btn-overlay--nay" style={{width: `${this.getVotePercentage('nay', motion)}%`, left: 'unset'}}></div>
+            <div className="btn-overlay btn-overlay--yea" style={{opacity: this.getOverlayOpacity(motion, 'yea'), width: `${this.getVotePercentage('yea', motion)}%`, right: 'unset'}}></div>
+            {/*
+            <div className="btn-overlay btn-overlay--abstain" style={{opacity: this.getOverlayOpacity(motion, 'abstain'), width: `${this.getVotePercentage('abstain', motion)}%`, right: `${this.getVotePercentage('nay', motion)}%`, left: 'unset'}}></div>
+            */}
+            <div className="btn-overlay btn-overlay--nay" style={{opacity: this.getOverlayOpacity(motion, 'nay'), width: `${this.getVotePercentage('nay', motion)}%`, left: 'unset'}}></div>
           </button>
           {(this.props.phase?.id === 'vote' && this.props.player?.voteWeight > 0) && (
             <div className="btn-group w-100">
-              {returnStandardVotes().map(def => (
+              {returnStandardVotes(true).map(def => (
                 <button key={def.key} style={{borderTopLeftRadius: 0}}
                     className={`btn w-100 btn-${this.getVote(motion.id, this.props?.player.id)?.vote !== def.key ? 'outline-' : ''}${def.color}`}
                     disabled={!!this.props.motionVotes[motion.id]?.[this.props?.player?.id]}

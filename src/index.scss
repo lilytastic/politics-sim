@@ -25,7 +25,7 @@ code {
   bottom: 0;
   right: 0;
   opacity: 0.23;
-  transition: width .15s ease-out, left .15s ease-out, right .15s ease-out, transform .15s ease-in-out;
+  transition: width .15s ease-out, opacity .15s ease-out, left .15s ease-out, right .15s ease-out, transform .15s ease-in-out;
   &--yea {
     background-color: rgb(83, 180, 83);
     right: unset;

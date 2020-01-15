@@ -25,9 +25,8 @@ export const checkIfFullyTallied = (votes: {[id: string]: {[id: string]: VoteDat
 }
 
 export const returnStandardVotes = (includeAbstainOption = false) => {
-  const basic = [{key: 'yea', color: 'success'}, {key: 'nay', color: 'danger'}];
-  const abstain = {key: 'abstrain', color: 'secondary'};
-  return [...basic, ...(includeAbstainOption ? [abstain] : []) ]
+  let votes = [{key: 'yea', color: 'success'}, {key: 'abstain', color: 'secondary'}, {key: 'nay', color: 'danger'}];
+  return includeAbstainOption ? votes : votes.filter(x => x.key !== 'abstain');
 }
 
 export const currentVoteEntitiesToArray = (currentVotes: {[motionId: string]: {[actorId: string]: VoteData}}, motionId: string) => {
