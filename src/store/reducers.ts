@@ -96,10 +96,12 @@ const initialState: State = {
 };
 
 export function rootReducer(state = initialState, action: any): State {
+  /*
   const ignoredTypes = ['PASS_TIME', 'CHANGE_VOTE', 'CHANGE_CURRENT_PHASE_COUNTDOWN'];
   if (ignoredTypes.indexOf(action.type) === -1) {
     console.log(action);
   }
+  */
   switch (action.type) {
     case 'PASS_TIME':
       return {

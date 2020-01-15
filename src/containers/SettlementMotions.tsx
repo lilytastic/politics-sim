@@ -11,6 +11,7 @@ import { returnStandardVotes } from '../helpers/politics.helpers';
 import { Vote } from '../models/vote.model';
 import FlipMove from 'react-flip-move';
 import { SettlementWithState } from '../models/settlement.model';
+import { PHASES } from '../models/phase.model';
 
 class SettlementMotions extends React.Component {
   // @ts-ignore;
@@ -80,7 +81,7 @@ class SettlementMotions extends React.Component {
     <FlipMove>
       {this.props.availableMotions
           .map(motion => ({...motion, onTable: getById(this.props.motionsTabled, motion.id)}))
-          .filter(motion => (this.props.phase?.id === 'table') || (this.props.phase?.id === 'vote' && !!motion.onTable))
+          .filter(motion => (this.props.phase?.id === PHASES.TABLE.id) || (this.props.phase?.id === PHASES.VOTE.id && !!motion.onTable) || (this.props.phase?.id === PHASES.RESULTS.id && !!motion.onTable && this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)))
           .map(motion => (
         <div key={motion.id}
             className={`text-left btn-group-vertical ${(this.props.phase?.id !== 'table' || !motion.onTable) ? 'shadow-sm' : 'shadow'} motion__wrapper motion__wrapper--${this.props.phase?.id !== 'vote' ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'} btn-group-vertical mb-3 w-100 bg-white rounded` + (this.props.inspectedMotion === motion.id && ' shadow-sm  motion__wrapper--active')}>
@@ -107,6 +108,7 @@ class SettlementMotions extends React.Component {
               {returnStandardVotes().map(def => (
                 <button key={def.key} style={{borderTopLeftRadius: 0}}
                     className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== def.key ? 'outline-' : ''}${def.color}`}
+                    disabled={!!this.props.motionVotes[motion.id][this.props?.player?.id]}
                     onClick={() => this.vote(motion.id, this.props.player.id, def.key)}>
                   {def.key}
                   &nbsp;

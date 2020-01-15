@@ -58,18 +58,18 @@ class Game extends React.Component {
     return {actorId, motionId, ...this.props.motionVotes[motionId]?.[actorId]};
   }
 
+  getOffers = (motion: Motion, vote: string) => {
+    return this.props.currentVoteOffers['player']
+      ?.filter(x => x.motionId === motion.id && x.vote === vote)
+      .sort((a, b) => (a.purchaseAgreement?.amountSpent || 0) > (b.purchaseAgreement?.amountSpent || 0) ? -1 : 1);
+  }
+
   onTick = () => {
     if (this.props.currentPhaseCountdown >= this.props.phase?.countdown - 1) {
       this.advancePhase();
     } else {
       this.props.dispatch(changeCurrentPhaseCountdown(this.props.currentPhaseCountdown + 1, this.props.settlement.id));
     }
-  }
-
-  getOffers = (motion: Motion, vote: string) => {
-    return this.props.currentVoteOffers['player']
-      ?.filter(x => x.motionId === motion.id && x.vote === vote)
-      .sort((a, b) => (a.purchaseAgreement?.amountSpent || 0) > (b.purchaseAgreement?.amountSpent || 0) ? -1 : 1);
   }
 
   advancePhase = () => {
@@ -79,11 +79,14 @@ class Game extends React.Component {
         if (!this.props.motionsTabled.length) {
           this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
         } else {
-          this.props.dispatch(changeCurrentPhase(PHASES.VOTE, this.props.settlement.id));
+          this.props.dispatch(changeCurrentPhase({...PHASES.VOTE, countdown: 10 + this.props.motionsTabled.length * 10}, this.props.settlement.id));
         }
         break;
       case 'vote':
         this.handleResults();
+        this.props.dispatch(changeCurrentPhase(PHASES.RESULTS, this.props.settlement.id));
+        break;
+      case 'results':
         this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
         break;
     }
@@ -141,13 +144,13 @@ class Game extends React.Component {
   returnToTablePhase = () => {
     this.grantAllowance();
     this.props.dispatch(refreshAvailableMotions(this.props.settlement.id));
-    timer(5000).subscribe(() => {
+    timer(this.props.phase.countdown * 0.25 * 1000).subscribe(() => {
       const actors = this.props?.actors.filter(x => x.id !== this.props.player.id);
       this.props.availableMotions.forEach((motion: Motion) => {
         actors.forEach((actor, i) => {
-          timer(Math.random() * 15000).subscribe(() => {
+          timer(Math.random() * (this.props.phase.countdown * 0.75 * 1000)).subscribe(() => {
             const approval = getActorApproval(actor, motion);
-            if (approval > 2.5) {
+            if (approval > 1 + (motion.costToTable / 100)) {
               this.table(motion.id, actor.id);
             }
           });
@@ -163,29 +166,43 @@ class Game extends React.Component {
   };
 
   actorsVote = () => {
-    timer(5000).subscribe(() => {
-      this.npcsVote(20000);
-      timer(20000).subscribe(() => {
-        this.npcsMakeOffers(30000);
-        timer(30000).subscribe(() => {
-          this.npcsConsiderOffers(30000);
-        });
+    const idleTime = this.props.phase.countdown * 1000 * 0.0;
+    const voteTime = this.props.phase.countdown * 1000 * 0.6;
+    const makeOfferTime = this.props.phase.countdown * 1000 * 0.2;
+    timer(idleTime).subscribe(() => {
+      this.npcsMakeOffers(makeOfferTime);
+      timer(makeOfferTime).subscribe(() => {
+        this.npcsVote(voteTime);
       });
     });
   }
 
   npcsVote = (duration: number) => {
     this.getTabledMotions().forEach(motion => {
-      getActorsWithApproval(this.props?.actors, motion)
+      const actors = getActorsWithApproval(this.props?.actors, motion)
+      actors
         .filter(x => x.voteWeight > 0 && x.id !== this.props.player.id)
         .forEach((actor, i) => {
           timer(Math.random() * duration).subscribe(() => {
-            this.props.dispatch(changeVote({
-              actorId: actor.id,
-              motionId: motion.id,
-              vote: actor.position,
-              reason: 'freely'
-            }, this.props.settlement.id));
+            const personalOffers = (this.props.currentVoteOffers[actor.id]||[])
+              .filter(offer => offer.motionId === motion.id)
+              .shuffle()
+              .sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1) || [];
+            const topOffer = personalOffers.length > 0 ? personalOffers[0] : null;
+            if (!!topOffer) {
+              this.props.dispatch(changeVote(topOffer, this.props.settlement.id));
+              const purchaser = this.props.actors.find(x => x.id === topOffer.purchaseAgreement?.purchasedBy);
+              const amountSpent = topOffer.purchaseAgreement?.amountSpent || 0;
+              console.log(`${actor.name} agreed to vote ${topOffer.vote} on ${motion.name} for ${purchaser?.name} in exchange for ${amountSpent}`);
+            }
+            else {
+              this.props.dispatch(changeVote({
+                actorId: actor.id,
+                motionId: motion.id,
+                vote: actor.position,
+                reason: 'freely'
+              }, this.props.settlement.id));
+            }
           });
         });
     });
@@ -203,32 +220,6 @@ class Game extends React.Component {
             const desiredOffers = getDesiredOffers(actor, motion, actors, this.props?.motionVotes[motion.id], this.props?.currentVoteOffers);
             if (desiredOffers.length > 0) {
               this.props.dispatch(addOffers(desiredOffers, this.props.settlement.id));
-            }
-          });
-        });
-    });
-  }
-
-  npcsConsiderOffers = (duration: number) => {
-    this.getTabledMotions().forEach(motion => {
-      this.props.actors
-        .shuffle()
-        .filter(x => this.props.player.id !== x.id && motion.tabledBy !== x.id)
-        .forEach((actor, i) => {
-          timer(Math.random() * duration).subscribe(() => {
-            let existingVote = this.props.motionVotes[motion.id]?.[actor.id];
-            if (!!existingVote?.purchaseAgreement) {
-              return;
-            }
-            const personalOffers = (this.props.currentVoteOffers[actor.id]||[]).shuffle().sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1) || [];
-            const topOffer = personalOffers.filter(offer => offer.motionId === motion.id)[0];
-            if (!!topOffer) {
-              const purchaser = this.props.actors.find(x => x.id === topOffer.purchaseAgreement?.purchasedBy);
-              const amountSpent = topOffer.purchaseAgreement?.amountSpent || 0;
-              if (purchaser && purchaser.state.capital >= amountSpent && !(existingVote?.purchaseAgreement)) {
-                this.props.dispatch(changeVote(topOffer, this.props.settlement.id));
-                console.log(`${actor.name} agreed to vote ${topOffer.vote} on ${motion.name} for ${purchaser.name} in exchange for ${amountSpent}`);
-              }
             }
           });
         });
