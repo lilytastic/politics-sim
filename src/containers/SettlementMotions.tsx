@@ -52,7 +52,6 @@ class SettlementMotions extends React.Component {
       vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
       reason: 'freely'
     }, this.props.settlement.id));
-    console.log('voting', motionId);
   };
 
   phaseFunc: {[id: string]: (motionid: string, actorId: string) => void} = {table: this.table, vote: this.vote};

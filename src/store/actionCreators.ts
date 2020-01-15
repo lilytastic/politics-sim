@@ -39,6 +39,12 @@ export const refreshAvailableMotions = (repeat: boolean, settlementId: string) =
   isRepeat: repeat
 });
 
+export const changeCapital = (actorId: string, amount: number) => ({
+  type: 'CHANGE_CAPITAL',
+  actorId,
+  amount
+});
+
 export const passMotion = (motion: Motion, settlementId: string) => ({
   type: 'PASS_MOTION',
   motion,

@@ -234,6 +234,19 @@ export function rootReducer(state = initialState, action: any): State {
         }
       };
     }
+    case 'CHANGE_CAPITAL': {
+      const actorState = {...state.saveData.actorState};
+      actorState[action.actorId] = actorState[action.actorId] || {capital: 0};
+      console.log(action.type, action.actorId, `${actorState[action.actorId].capital} + ${action.amount} = ${actorState[action.actorId].capital + action.amount}`);
+      actorState[action.actorId].capital += action.amount;
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          actorState
+        }
+      };
+    }
     case 'SET_VOTE_OFFERS': {
       const settlementState = {...state.saveData.settlementState};
       settlementState[action.settlementId] = action.offers;

@@ -83,7 +83,7 @@ export const getDesiredOffers = (actor: ActorWithStateAndOffices & {position: st
   const votesToBuy = (Math.max(0, votesNeeded + 1) * 1.33) + Math.ceil(Math.abs(actor.approval) / 10);
   const amountToSpend = actor.id === motion.tabledBy ? actor.state.capital : (actor.state.capital / 2); // TODO: Base off approval -- more passion, more $$$
   if (votesToBuy > 0) {
-    console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${Math.max(0, votesNeeded)} more votes, but wants ${Math.ceil(votesToBuy)}`, actorsToBuyFrom);
+    // console.log(`${actor.name} wants "${actor.position}" vote on ${motion.name}: Needs ${Math.max(0, votesNeeded)} more votes, but wants ${Math.ceil(votesToBuy)}`, actorsToBuyFrom);
   }
 
   let votesBought = 0;
