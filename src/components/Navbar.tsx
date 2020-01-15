@@ -3,7 +3,7 @@ import { StatIcon } from "./StatIcon";
 
 export const Navbar = ({ player }: any) => {
   return (
-    <nav className="navbar py-1 px-0 sticky-top navbar-dark bg-dark">
+    <nav className="navbar shadow py-1 px-0 sticky-top navbar-dark bg-dark">
       <div className="container px-4">
       <ul className="navbar-nav mr-auto">
         <li className="nav-item">

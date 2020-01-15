@@ -34,7 +34,7 @@ class SettlementCircle extends React.Component {
           <button className="btn btn-outline-dark border-secondary w-100 text-left">
             <ActorInfo actor={x}></ActorInfo>
           </button>
-          {(this.props.phase?.id !== 'table' && x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.props.inspectedMotion)) ? (() => {
+          {(this.props.phase?.id === 'vote' && x.id !== this.props.player.id && !!this.props.availableMotions.find(y => y.id === this.props.inspectedMotion)) ? (() => {
             // @ts-ignore;
             const approval = getActorApproval(x, this.props.availableMotions.find(y => y.id === this.props.inspectedMotion));
             const costToInfluence = getCostToInfluence(x, approval);

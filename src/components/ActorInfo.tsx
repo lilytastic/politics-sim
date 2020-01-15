@@ -5,6 +5,7 @@ import { State } from '../store/reducers';
 import { ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { getAssociatedVoteColor } from '../helpers/politics.helpers';
 import { getById } from '../helpers/entity.helpers';
+import { PHASES } from '../models/phase.model';
 
 export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion}: Props) => {
   return (
@@ -28,7 +29,7 @@ export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion}:
         ))}
       </div>
       }
-      {phase?.id !== 'table' && inspectedMotion !== '' ? (
+      {phase?.id !== PHASES.TABLE.id && inspectedMotion !== '' ? (
         <div>
           <div>
             {!!motionVotes[inspectedMotion]?.[actor.id] ? (

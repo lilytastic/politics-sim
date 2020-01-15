@@ -18,6 +18,28 @@ code {
   margin: 0 auto;
 }
 
+.btn-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  opacity: 0.23;
+  transition: width .15s ease-out, left .15s ease-out, transform .15s ease-in-out;
+  &--yea {
+    background-color: rgb(83, 180, 83);
+    right: unset;
+  }
+  &--nay {
+    background-color: crimson;
+    left: unset;
+  }
+  &--abstain {
+    background-color: silver;
+    left: unset;
+  }
+}
+
 .motion__wrapper {
   transition: background .15s ease-in-out;
 }

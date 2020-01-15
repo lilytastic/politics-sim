@@ -213,17 +213,22 @@ class Game extends React.Component {
                 }, this.props.settlement.id));
               }
 
-              this.subscriptions.push(
-                timer(3000).subscribe(x => {
-                  if (this.props.phase?.id === 'vote' && Object.keys(this.props.motionVotes[motion.id]).length >= this.props.actors.filter(x => x.voteWeight > 0).length) {
-                    this.advancePhase();
-                  }
-                })
-              );
+              this.subscriptions.push(this.checkIfFullyTallied());
             })
           );
         });
     });
+  }
+
+  checkIfFullyTallied = () => {
+    return timer(3000).subscribe(x => {
+      const numberOfVoters = this.props.actors.filter(x => x.voteWeight > 0).length;
+      if (Object.keys(this.props.motionVotes).filter(motion => (
+        Object.keys(this.props.motionVotes[motion]).filter(actor => !!this.props.motionVotes[motion][actor]).length < numberOfVoters
+      )).length === 0) {
+        this.advancePhase();
+      }
+    })
   }
 
   npcsMakeOffers = (duration: number) => {
@@ -250,6 +255,19 @@ class Game extends React.Component {
     <div>
       <Navbar player={this.props.player}></Navbar>
       <div onClick={() => {this.props.dispatch(inspectMotion(''))}} className={"fade--full" + (this.props.inspectedMotion !== '' ? ' active' : '')}></div>
+      <div className="bg-dark shadow">
+        <div className="container px-4">
+          <ul className="d-flex py-3 pt-4 m-0">
+            {this.props.settlements.map(settlement => (
+              <li key={settlement.id} className="mr-10 d-block">
+                <div className="rounded-circle text-light">
+                  <a>{settlement.name}</a>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
       <div className="p-4 container bg-light">
         <div>
           {false && this.props?.notifications.map((x, i) => (
@@ -283,6 +301,7 @@ const mapStateToProps = (state: State) => {
     currentPhase: settlement.state.currentPhase,
     inspectedMotion: state.saveData.inspectedMotion,
     policies: state.policies,
+    settlements: state.settlements,
     notifications: state.saveData.notifications,
     screen: state.screen,
     availableMotions: settlement.state.availableMotions

@@ -80,7 +80,7 @@ class SettlementMotions extends React.Component {
   willDisplayMotion(motion: any) {
     switch (this.props.phase?.id) {
       case PHASES.TABLE.id:
-        return true;
+        return !!motion.onTable;
       case PHASES.VOTE.id:
         return !!motion.onTable;
       case PHASES.RESULTS.id:
@@ -95,16 +95,34 @@ class SettlementMotions extends React.Component {
       case PHASES.TABLE.id:
         return 'neutral';
       case PHASES.VOTE.id:
+        if (Object.keys(this.props.motionVotes[motion.id] || {}).length > 1) {
+          return (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay';
+        }
+        /*
         if (Object.keys(this.props.motionVotes[motion.id] || {}).length >= this.props.actors.filter(x => x.voteWeight).length) {
           return (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay';
         }
-        return 'neutral';
+        */
+         return 'neutral';
       case PHASES.RESULTS.id:
         return (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay';
       default:
         return 'neutral';
     }
     // === 'table' || (this.props.phase?.id === 'vote' && ) ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'}
+  }
+
+  getVotePercentage(vote: string, motion: Motion) {
+    if (this.props.phase?.id === PHASES.RESULTS.id) {
+      const yea = this.getVotes(motion, 'yea', true);
+      const nay = this.getVotes(motion, 'nay', true);
+      if (vote === 'yea') {return yea / (yea + nay) * 100;}
+      else if (vote === 'nay') {return nay / (yea + nay) * 100;}
+      else {return 0;}
+    }
+    const numberOfVoters = this.props.actors.reduce((acc, curr) => acc + curr.voteWeight, 0);
+    return Object.keys(this.props.motionVotes[motion.id] || {})
+      .reduce((acc, curr) => acc + (this.props.motionVotes[motion.id][curr]?.vote === vote ? (this.props.actors.find(x => x.id === curr)?.voteWeight || 0) : 0), 0) / numberOfVoters * 100;
   }
 
   render = () => (
@@ -114,7 +132,7 @@ class SettlementMotions extends React.Component {
           .filter(motion => this.willDisplayMotion(motion))
           .map(motion => (
         <div key={motion.id}
-            className={`text-left btn-group-vertical ${(this.props.phase?.id !== 'table' || !motion.onTable) ? 'shadow-sm' : 'shadow'} motion__wrapper motion__wrapper--${this.getHighlightStatus(motion)} btn-group-vertical mb-3 w-100 bg-white rounded` + (this.props.inspectedMotion === motion.id && ' shadow-sm motion__wrapper--active')}>
+            className={`text-left btn-group-vertical ${(this.props.phase?.id !== 'table' || !motion.onTable) ? 'shadow-sm' : 'shadow'} motion__wrapper btn-group-vertical mb-3 w-100 bg-white rounded` + (this.props.inspectedMotion === motion.id && ' shadow-sm motion__wrapper--active')}>
           <button className={`w-100 btn btn-outline-dark border-secondary text-left p-2 px-3`}
               onClick={() => this.props.dispatch(inspectMotion(motion?.id))}>
             <MotionInfo motion={motion}
@@ -132,14 +150,17 @@ class SettlementMotions extends React.Component {
                 </span>
               }
             </MotionInfo>
+            <div className="btn-overlay btn-overlay--yea" style={{width: `${this.getVotePercentage('yea', motion)}%`, right: 'unset'}}></div>
+            <div className="btn-overlay btn-overlay--abstain" style={{width: `${this.getVotePercentage('abstain', motion)}%`, left: `${this.getVotePercentage('yea', motion)}%`, right: 'unset'}}></div>
+            <div className="btn-overlay btn-overlay--nay" style={{width: `${this.getVotePercentage('nay', motion)}%`, left: 'unset'}}></div>
           </button>
           {(this.props.phase?.id === 'vote' && this.props.player?.voteWeight > 0) && (
             <div className="btn-group w-100">
               {returnStandardVotes().map(def => (
                 <button key={def.key} style={{borderTopLeftRadius: 0}}
-                    className={`btn w-100 btn-${this.getVote(motion.id, this.props.player.id)?.vote !== def.key ? 'outline-' : ''}${def.color}`}
-                    disabled={!!this.props.motionVotes[motion.id][this.props?.player?.id]}
-                    onClick={() => this.vote(motion.id, this.props.player.id, def.key)}>
+                    className={`btn w-100 btn-${this.getVote(motion.id, this.props?.player.id)?.vote !== def.key ? 'outline-' : ''}${def.color}`}
+                    disabled={!!this.props.motionVotes[motion.id]?.[this.props?.player?.id]}
+                    onClick={() => this.vote(motion.id, this.props?.player.id, def.key)}>
                   {def.key}
                   &nbsp;
                   {!!this.getOffers(motion, def.key)?.length && (

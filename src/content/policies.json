@@ -114,11 +114,7 @@
 		"stances": {
 			"enshrined": {
 				"label": "Enshrined",
-				"effects": [{"stat": "vigilance", "amount": 15}, {"stat": "creativity", "amount": 10}]
-			},
-			"encouraged": {
-				"label": "Encouraged",
-				"effects": [{"stat": "vigilance", "amount": 10}, {"stat": "creativity", "amount": 5}]
+				"effects": [{"stat": "vigilance", "amount": 5}, {"stat": "creativity", "amount": 10}]
 			}
 		}
 	},
