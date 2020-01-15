@@ -14,6 +14,16 @@ export function getAssociatedVoteColor(vote: string) {
   }
 }
 
+export const checkIfFullyTallied = (votes: {[id: string]: {[id: string]: VoteData}}, actors: ActorWithStateAndOffices[]) => {
+  const numberOfVoters = actors.filter(x => x.voteWeight > 0).length;
+  if (Object.keys(votes).filter(motion => (
+    Object.keys(votes[motion]).filter(actor => !!votes[motion][actor]).length < numberOfVoters
+  )).length === 0) {
+    return true;
+  }
+  return false;
+}
+
 export const returnStandardVotes = (includeAbstainOption = false) => {
   const basic = [{key: 'yea', color: 'success'}, {key: 'nay', color: 'danger'}];
   const abstain = {key: 'abstrain', color: 'secondary'};

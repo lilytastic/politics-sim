@@ -5,7 +5,7 @@ import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotion
 import { actors, ActorWithState, ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { State } from '../store/reducers';
 import { Motion } from '../models/motion.model';
-import { getActorApproval, getActorsWithApproval, getDesiredOffers, getPassedMotions } from '../helpers/politics.helpers';
+import { getActorApproval, getActorsWithApproval, getDesiredOffers, getPassedMotions, checkIfFullyTallied } from '../helpers/politics.helpers';
 import { getById } from '../helpers/entity.helpers';
 import { Vote } from '../models/vote.model';
 import { calculateActorCapitalWithAllowance } from '../helpers/actor.helpers';
@@ -173,6 +173,13 @@ class Game extends React.Component {
       .filter(motion => !!motion.tabledBy);
   };
 
+  componentDidUpdate = (props: any) => {
+    if (this.props.phase?.id === PHASES.VOTE.id && checkIfFullyTallied(this.props.motionVotes, this.props.actors)) {
+      this.advancePhase();
+    }
+    // this.props.dispatch(changeCurrentPhaseCountdown(Math.min(this.props.currentPhaseCountdown, 3), this.props.settlement.id));
+  }
+
   actorsVote = () => {
     const idleTime = this.props.phase.countdown * 1000 * 0.0;
     const voteTime = this.props.phase.countdown * 1000 * 0.4;
@@ -212,23 +219,10 @@ class Game extends React.Component {
                   reason: 'freely'
                 }, this.props.settlement.id));
               }
-
-              this.subscriptions.push(this.checkIfFullyTallied());
             })
           );
         });
     });
-  }
-
-  checkIfFullyTallied = () => {
-    return timer(3000).subscribe(x => {
-      const numberOfVoters = this.props.actors.filter(x => x.voteWeight > 0).length;
-      if (Object.keys(this.props.motionVotes).filter(motion => (
-        Object.keys(this.props.motionVotes[motion]).filter(actor => !!this.props.motionVotes[motion][actor]).length < numberOfVoters
-      )).length === 0) {
-        this.advancePhase();
-      }
-    })
   }
 
   npcsMakeOffers = (duration: number) => {

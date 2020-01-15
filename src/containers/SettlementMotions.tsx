@@ -7,7 +7,7 @@ import { changeVote, inspectMotion, tableMotion, updateActors, rescindMotion } f
 import { connect, ConnectedProps } from 'react-redux';
 import { MotionInfo } from '../components/MotionInfo';
 import { Motion } from '../models/motion.model';
-import { returnStandardVotes } from '../helpers/politics.helpers';
+import { returnStandardVotes, checkIfFullyTallied } from '../helpers/politics.helpers';
 import { Vote } from '../models/vote.model';
 import FlipMove from 'react-flip-move';
 import { SettlementWithState } from '../models/settlement.model';
@@ -52,6 +52,9 @@ class SettlementMotions extends React.Component {
       vote: (currentVote?.vote === vote ? 'abstain' : vote) || 'abstain',
       reason: 'freely'
     }, this.props.settlement.id));
+    if (checkIfFullyTallied(this.props.motionVotes, this.props.actors)) {
+      // TODO: last vote was the player's -- skip to whatever.
+    }
     console.log('voting', motionId);
   };
 
