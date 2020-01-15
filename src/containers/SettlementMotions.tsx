@@ -77,16 +77,46 @@ class SettlementMotions extends React.Component {
     return this.props.actors?.reduce((acc, curr) => acc + (this.getVote(motion.id, curr.id)?.vote === vote ? (useVoteWeight ? curr.voteWeight : 1) : 0), 0) || 0;
   }
 
+  willDisplayMotion(motion: any) {
+    switch (this.props.phase?.id) {
+      case PHASES.TABLE.id:
+        return true;
+      case PHASES.VOTE.id:
+        return !!motion.onTable;
+      case PHASES.RESULTS.id:
+        return !!motion.onTable;
+      default:
+        return true;
+    }
+  }
+
+  getHighlightStatus(motion: any) {
+    switch (this.props.phase?.id) {
+      case PHASES.TABLE.id:
+        return 'neutral';
+      case PHASES.VOTE.id:
+        if (Object.keys(this.props.motionVotes[motion.id] || {}).length >= this.props.actors.filter(x => x.voteWeight).length) {
+          return (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay';
+        }
+        return 'neutral';
+      case PHASES.RESULTS.id:
+        return (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay';
+      default:
+        return 'neutral';
+    }
+    // === 'table' || (this.props.phase?.id === 'vote' && ) ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'}
+  }
+
   render = () => (
     <FlipMove>
       {this.props.availableMotions
           .map(motion => ({...motion, onTable: getById(this.props.motionsTabled, motion.id)}))
-          .filter(motion => (this.props.phase?.id === PHASES.TABLE.id) || (this.props.phase?.id === PHASES.VOTE.id && !!motion.onTable) || (this.props.phase?.id === PHASES.RESULTS.id && !!motion.onTable && this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)))
+          .filter(motion => this.willDisplayMotion(motion))
           .map(motion => (
         <div key={motion.id}
-            className={`text-left btn-group-vertical ${(this.props.phase?.id !== 'table' || !motion.onTable) ? 'shadow-sm' : 'shadow'} motion__wrapper motion__wrapper--${(this.props.phase?.id === 'table' || (this.props.phase?.id === 'vote' && Object.keys(this.props.motionVotes[motion.id]).length < this.props.actors.filter(x => x.voteWeight).length)) ? 'neutral' : (this.getVotes(motion, 'yea', true) > this.getVotes(motion, 'nay', true)) ? 'yea' : 'nay'} btn-group-vertical mb-3 w-100 bg-white rounded` + (this.props.inspectedMotion === motion.id && ' shadow-sm motion__wrapper--active')}>
+            className={`text-left btn-group-vertical ${(this.props.phase?.id !== 'table' || !motion.onTable) ? 'shadow-sm' : 'shadow'} motion__wrapper motion__wrapper--${this.getHighlightStatus(motion)} btn-group-vertical mb-3 w-100 bg-white rounded` + (this.props.inspectedMotion === motion.id && ' shadow-sm motion__wrapper--active')}>
           <button className={`w-100 btn btn-outline-dark border-secondary text-left p-2 px-3`}
-              onClick={() => this.props.dispatch(inspectMotion(motion.id))}>
+              onClick={() => this.props.dispatch(inspectMotion(motion?.id))}>
             <MotionInfo motion={motion}
                 mode={this.props.phase?.id}
                 tabledBy={getById(this.props.actors, motion.onTable?.tabledBy || -1)}>

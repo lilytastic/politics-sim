@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux'
-import { interval, timer } from 'rxjs';
+import { interval, timer, Subscription } from 'rxjs';
 import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion, addAlert, addOffers } from '../store/actionCreators';
 import { actors, ActorWithState, ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { State } from '../store/reducers';
@@ -18,6 +18,7 @@ import { PHASES } from '../models/phase.model';
 class Game extends React.Component {
   // @ts-ignore;
   props: Props;
+  subscriptions: Subscription[] = [];
 
   constructor(props: any) {
     super(props);
@@ -79,7 +80,7 @@ class Game extends React.Component {
         if (!this.props.motionsTabled.length) {
           this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
         } else {
-          this.props.dispatch(changeCurrentPhase({...PHASES.VOTE, countdown: 10 + this.props.motionsTabled.length * 10}, this.props.settlement.id));
+          this.props.dispatch(changeCurrentPhase({...PHASES.VOTE, countdown: 15 + this.props.motionsTabled.length * 15}, this.props.settlement.id));
         }
         break;
       case 'vote':
@@ -90,6 +91,11 @@ class Game extends React.Component {
         this.props.dispatch(changeCurrentPhase(PHASES.TABLE, this.props.settlement.id));
         break;
     }
+
+    this.subscriptions.forEach(x => {
+      x.unsubscribe();
+    });
+    this.subscriptions = [];
 
     const newPhase = this.props.phase;
     if (newPhase?.id === 'table') {
@@ -144,19 +150,21 @@ class Game extends React.Component {
   returnToTablePhase = () => {
     this.grantAllowance();
     this.props.dispatch(refreshAvailableMotions(this.props.settlement.id));
-    timer(this.props.phase.countdown * 0.25 * 1000).subscribe(() => {
-      const actors = this.props?.actors.filter(x => x.id !== this.props.player.id);
-      this.props.availableMotions.forEach((motion: Motion) => {
-        actors.forEach((actor, i) => {
-          timer(Math.random() * (this.props.phase.countdown * 0.75 * 1000)).subscribe(() => {
-            const approval = getActorApproval(actor, motion);
-            if (approval > 1 + (motion.costToTable / 100)) {
-              this.table(motion.id, actor.id);
-            }
-          });
-        })
-      });
-    });
+    this.subscriptions.push(
+      timer(this.props.phase.countdown * 0.25 * 1000).subscribe(() => {
+        const actors = this.props?.actors.filter(x => x.id !== this.props.player.id);
+        this.props.availableMotions.forEach((motion: Motion) => {
+          actors.forEach((actor, i) => {
+            timer(Math.random() * (this.props.phase.countdown * 0.75 * 1000)).subscribe(() => {
+              const approval = getActorApproval(actor, motion);
+              if (approval > 1 + (motion.costToTable / 100)) {
+                this.table(motion.id, actor.id);
+              }
+            });
+          })
+        });
+      })
+    );
   }
 
   getTabledMotions = () => {
@@ -167,7 +175,7 @@ class Game extends React.Component {
 
   actorsVote = () => {
     const idleTime = this.props.phase.countdown * 1000 * 0.0;
-    const voteTime = this.props.phase.countdown * 1000 * 0.6;
+    const voteTime = this.props.phase.countdown * 1000 * 0.4;
     const makeOfferTime = this.props.phase.countdown * 1000 * 0.2;
     timer(idleTime).subscribe(() => {
       this.npcsMakeOffers(makeOfferTime);
@@ -183,27 +191,37 @@ class Game extends React.Component {
       actors
         .filter(x => x.voteWeight > 0 && x.id !== this.props.player.id)
         .forEach((actor, i) => {
-          timer(Math.random() * duration).subscribe(() => {
-            const personalOffers = (this.props.currentVoteOffers[actor.id]||[])
-              .filter(offer => offer.motionId === motion.id)
-              .shuffle()
-              .sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1) || [];
-            const topOffer = personalOffers.length > 0 ? personalOffers[0] : null;
-            if (!!topOffer) {
-              this.props.dispatch(changeVote(topOffer, this.props.settlement.id));
-              const purchaser = this.props.actors.find(x => x.id === topOffer.purchaseAgreement?.purchasedBy);
-              const amountSpent = topOffer.purchaseAgreement?.amountSpent || 0;
-              console.log(`${actor.name} agreed to vote ${topOffer.vote} on ${motion.name} for ${purchaser?.name} in exchange for ${amountSpent}`);
-            }
-            else {
-              this.props.dispatch(changeVote({
-                actorId: actor.id,
-                motionId: motion.id,
-                vote: actor.position,
-                reason: 'freely'
-              }, this.props.settlement.id));
-            }
-          });
+          this.subscriptions.push(
+            timer(Math.random() * duration).subscribe(() => {
+              const personalOffers = (this.props.currentVoteOffers[actor.id]||[])
+                .filter(offer => offer.motionId === motion.id)
+                .shuffle()
+                .sort((a, b) => (a.purchaseAgreement?.amountSpent||0) > (b.purchaseAgreement?.amountSpent||0) ? -1 : 1) || [];
+              const topOffer = personalOffers.length > 0 ? personalOffers[0] : null;
+              if (!!topOffer) {
+                this.props.dispatch(changeVote(topOffer, this.props.settlement.id));
+                const purchaser = this.props.actors.find(x => x.id === topOffer.purchaseAgreement?.purchasedBy);
+                const amountSpent = topOffer.purchaseAgreement?.amountSpent || 0;
+                console.log(`${actor.name} agreed to vote ${topOffer.vote} on ${motion.name} for ${purchaser?.name} in exchange for ${amountSpent}`);
+              }
+              else {
+                this.props.dispatch(changeVote({
+                  actorId: actor.id,
+                  motionId: motion.id,
+                  vote: actor.position,
+                  reason: 'freely'
+                }, this.props.settlement.id));
+              }
+
+              this.subscriptions.push(
+                timer(3000).subscribe(x => {
+                  if (this.props.phase?.id === 'vote' && Object.keys(this.props.motionVotes[motion.id]).length >= this.props.actors.filter(x => x.voteWeight > 0).length) {
+                    this.advancePhase();
+                  }
+                })
+              );
+            })
+          );
         });
     });
   }
@@ -216,12 +234,14 @@ class Game extends React.Component {
         .filter(x => x.id !== this.props.player.id && Math.abs(x.approval) > 3)
         .reverse()
         .forEach(actor => {
-          timer(Math.random() * duration).subscribe(() => {
-            const desiredOffers = getDesiredOffers(actor, motion, actors, this.props?.motionVotes[motion.id], this.props?.currentVoteOffers);
-            if (desiredOffers.length > 0) {
-              this.props.dispatch(addOffers(desiredOffers, this.props.settlement.id));
-            }
-          });
+          this.subscriptions.push(
+            timer(Math.random() * duration).subscribe(() => {
+              const desiredOffers = getDesiredOffers(actor, motion, actors, this.props?.motionVotes[motion.id], this.props?.currentVoteOffers);
+              if (desiredOffers.length > 0) {
+                this.props.dispatch(addOffers(desiredOffers, this.props.settlement.id));
+              }
+            })
+          );
         });
     });
   }
