@@ -264,6 +264,19 @@ export function rootReducer(state = initialState, action: any): State {
         }
       };
     }
+    case 'INCREMENT_ALL_PHASE_COUNTDOWNS': {
+      const settlementState = {...state.saveData.settlementState};
+      state.settlements.forEach(x => {
+        settlementState[x.id].currentPhaseCountdown += 1;
+      })
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          settlementState
+        }
+      };
+    }
     case 'CHANGE_CAPITAL': {
       const actorState = {...state.saveData.actorState};
       actorState[action.actorId] = actorState[action.actorId] || {capital: 0};
