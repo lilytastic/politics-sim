@@ -53,27 +53,37 @@ export interface State {
   saveData: SaveData;
 }
 
+const defaultSettlementState = {
+  policies: {},
+  history: [],
+  availableMotions: [],
+  motionsTabled: [],
+  motionVotes: {}, // type can be 'freely', 'bought', 'respect'
+  currentVoteOffers: {},
+  currentPhase: PHASES.TABLE,
+  currentPhaseCountdown: 0,
+  actorPositions: {},
+  officeOccupants: {}
+}
+
 const initialState: State = {
   screen: 'title',
   actors: [],
   // @ts-ignore;
   policies: Policies.default,
-  settlements: [{id: 'test', name: 'TestSettlement'}],
+  settlements: [
+    {id: 'test', name: 'TestSettlement'},
+    {id: 'test2', name: 'NewTest'}
+  ],
   saveData: {
     actorState: {},
+    currentSettlement: 'test',
     inspectedMotion: '',
     notifications: [],
     timePassed: 0,
     settlementState: {
       'test': {
-        policies: {},
-        history: [],
-        availableMotions: [],
-        motionsTabled: [],
-        motionVotes: {}, // type can be 'freely', 'bought', 'respect'
-        currentVoteOffers: {},
-        currentPhase: PHASES.TABLE,
-        currentPhaseCountdown: 0,
+        ...defaultSettlementState,
         ...POLITICAL_STRUCTURE_TRIBAL,
         actorPositions: {
           'shireen': {rank: 4},
@@ -88,6 +98,18 @@ const initialState: State = {
           elder: 'abigail',
           admin: 'vex',
           defense_sec: 'gretchen',
+          education_sec: 'matilda'
+        }
+      },
+      'test2': {
+        ...defaultSettlementState,
+        ...POLITICAL_STRUCTURE_TRIBAL,
+        actorPositions: {
+          'shireen': {rank: 4},
+          'player': {rank: 5}
+        },
+        officeOccupants: {
+          chieftain: 'shireen',
           education_sec: 'matilda'
         }
       }
@@ -182,6 +204,14 @@ export function rootReducer(state = initialState, action: any): State {
         saveData: {
           ...state.saveData,
           notifications: [...state.saveData.notifications, action.alert]
+        }
+      };
+    case 'CHANGE_SETTLEMENT':
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          currentSettlement: action.settlementId
         }
       };
     case 'CHANGE_VOTE': {
@@ -312,10 +342,31 @@ export function rootReducer(state = initialState, action: any): State {
       settlementState[action.settlementId].currentPhaseCountdown = action.currentPhaseCountdown;
       return { ...state, saveData: {...state.saveData, settlementState }};
     }
+    case 'RESET_VOTING': {
+      let settlementState: SettlementState = {...state.saveData.settlementState[action.settlementId]};
+
+      settlementState = {
+        ...settlementState,
+        currentVoteOffers: {},
+        motionsTabled: [],
+        availableMotions: []
+      }
+      const newState = {...state.saveData.settlementState};
+      newState[action.settlementId] = settlementState;
+
+      return {
+        ...state,
+        saveData: {
+          ...state.saveData,
+          inspectedMotion: '',
+          settlementState: newState
+        }
+      };
+    }
     case 'REFRESH_AVAILABLE_MOTIONS': {
       let settlementState: SettlementState = {...state.saveData.settlementState[action.settlementId]};
       const possibleMotions: Motion[] = [];
-      let motions: Motion[] = action.isRepeat ? [...settlementState.availableMotions.filter(x => !!settlementState.motionsTabled.find(y => y.id === x.id))] : [];
+      let motions: Motion[] = [...settlementState.availableMotions.filter(x => !!settlementState.motionsTabled.find(y => y.id === x.id))];
 
       state.policies.forEach(policy => {
         const existingStance = settlementState?.policies[policy.id];
@@ -369,8 +420,6 @@ export function rootReducer(state = initialState, action: any): State {
 
       settlementState = {
         ...settlementState,
-        currentVoteOffers: {},
-        motionsTabled: action.isRepeat ? settlementState.motionsTabled: [],
         availableMotions: motions
       }
       const newState = {...state.saveData.settlementState};

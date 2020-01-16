@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux'
 import { interval, timer, Subscription } from 'rxjs';
-import { changeCurrentPhase, changeCurrentPhaseCountdown, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion, addAlert, addOffers, changeCapital } from '../store/actionCreators';
+import { changeCurrentPhase, changeCurrentPhaseCountdown, resetVoting, refreshAvailableMotions, tableMotion, rescindMotion, updateActors, changeVote, passMotion, changeVotes, loadActorsWithDefaultState, setOffers, inspectMotion, addAlert, addOffers, changeCapital, travelToSettlement } from '../store/actionCreators';
 import { actors, ActorWithState, ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
 import { State } from '../store/reducers';
 import { Motion } from '../models/motion.model';
@@ -24,7 +24,7 @@ class Game extends React.Component {
     super(props);
     props.dispatch(loadActorsWithDefaultState(actors));
     window.requestAnimationFrame(() => {
-      this.returnToTablePhase(false);
+      this.onReturnToTablePhase(false);
     });
 
     interval(1000).subscribe(x => {
@@ -79,7 +79,7 @@ class Game extends React.Component {
     let isRepeatingTablePhase = false;
     switch (currentPhase?.id) {
       case 'table':
-        if (this.props.motionsTabled.length < 1) {
+        if (this.props.motionsTabled.length < 5) {
           newPhase = PHASES.TABLE;
           isRepeatingTablePhase = true;
         } else {
@@ -105,7 +105,7 @@ class Game extends React.Component {
     this.subscriptions = [];
 
     if (newPhase?.id === PHASES.TABLE.id) {
-      this.returnToTablePhase(isRepeatingTablePhase);
+      this.onReturnToTablePhase(isRepeatingTablePhase);
     }
     if (newPhase?.id === PHASES.VOTE.id) {
       const voteTime = this.props.phase.countdown * 1000 * 0.4;
@@ -163,9 +163,12 @@ class Game extends React.Component {
       });
   };
 
-  returnToTablePhase = (repeat: boolean) => {
+  onReturnToTablePhase = (repeat: boolean) => {
     this.grantAllowance();
-    this.props.dispatch(refreshAvailableMotions(repeat, this.props.settlement.id));
+    if (!repeat) {
+      this.props.dispatch(resetVoting(this.props.settlement.id));
+    }
+    this.props.dispatch(refreshAvailableMotions(this.props.settlement.id));
     this.subscriptions.push(
       timer(this.props.phase.countdown * 0.25 * 1000).subscribe(() => {
         const actors = this.props?.actors.filter(x => x.id !== this.props.player.id);
@@ -261,9 +264,9 @@ class Game extends React.Component {
         <div className="container px-4">
           <ul className="d-flex py-3 pt-4 m-0">
             {this.props.settlements.map(settlement => (
-              <li key={settlement.id} className="mr-10 d-block">
-                <div className="rounded-circle text-light">
-                  <a>{settlement.name}</a>
+              <li key={settlement.id} className="mr-5 d-block">
+                <div className="rounded-circle">
+                  <button className="btn btn-link text-light p-0" onClick={() => {this.props.dispatch(travelToSettlement(settlement.id))}}>{settlement.name}</button>
                 </div>
               </li>
             ))}
@@ -285,7 +288,7 @@ class Game extends React.Component {
 
 const mapStateToProps = (state: State) => {
   const settlements = state.settlements.map(x => ({...x, state: state.saveData.settlementState[x.id]}));
-  const settlement = settlements[0];
+  const settlement = settlements.find(x => x.id === state.saveData.currentSettlement) || settlements[0];
 
   const actors: ActorWithStateAndOffices[] = state.actors
     .map(x => ({...returnActorWithStateAndOffices(x, state.saveData.actorState[x.id], settlement)}))

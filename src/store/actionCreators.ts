@@ -23,6 +23,11 @@ export const inspectMotion = (motion: string) => ({
   motion
 });
 
+export const travelToSettlement = (settlementId: string) => ({
+  type: 'CHANGE_SETTLEMENT',
+  settlementId
+});
+
 export const changeCurrentPhase = (currentPhase: Phase, settlementId: string) => ({
   type: 'CHANGE_CURRENT_PHASE',
   currentPhase,
@@ -33,10 +38,13 @@ export const changeCurrentPhaseCountdown = (currentPhaseCountdown: number, settl
   currentPhaseCountdown,
   settlementId
 });
-export const refreshAvailableMotions = (repeat: boolean, settlementId: string) => ({
+export const refreshAvailableMotions = (settlementId: string) => ({
   type: 'REFRESH_AVAILABLE_MOTIONS',
-  settlementId,
-  isRepeat: repeat
+  settlementId
+});
+export const resetVoting = (settlementId: string) => ({
+  type: 'RESET_VOTING',
+  settlementId
 });
 
 export const changeCapital = (actorId: string, amount: number) => ({
