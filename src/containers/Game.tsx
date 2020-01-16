@@ -79,7 +79,7 @@ class Game extends React.Component {
     let isRepeatingTablePhase = false;
     switch (currentPhase?.id) {
       case 'table':
-        if (this.props.motionsTabled.length < 5) {
+        if (this.props.motionsTabled.length < 1) {
           newPhase = PHASES.TABLE;
           isRepeatingTablePhase = true;
         } else {

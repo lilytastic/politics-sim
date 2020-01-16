@@ -28,6 +28,15 @@ export const travelToSettlement = (settlementId: string) => ({
   settlementId
 });
 
+export const incrementAllPhaseCountdowns = (amount: number) => ({
+  type: 'INCREMENT_ALL_PHASE_COUNTDOWNS',
+  amount
+})
+
+export const removeAllExpiredPlans = () => ({
+  type: 'REMOVE_ALL_EXPIRED_PLANS'
+})
+
 export const changeCurrentPhase = (currentPhase: Phase, settlementId: string) => ({
   type: 'CHANGE_CURRENT_PHASE',
   currentPhase,

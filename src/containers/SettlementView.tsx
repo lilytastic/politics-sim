@@ -7,6 +7,7 @@ import CurrentPhase from './CurrentPhase';
 import SettlementCircle from './SettlementCircle';
 import SettlementMotions from './SettlementMotions';
 import { SettlementWithState } from '../models/settlement.model';
+import { checkIfFullyTallied } from '../helpers/politics.helpers';
 
 export const SettlementView = ({settlement, policies, phase, currentCountdown}: Props) => {
   return (
@@ -15,13 +16,19 @@ export const SettlementView = ({settlement, policies, phase, currentCountdown}: 
       <SettlementProfile settlement={settlement} policies={policies}></SettlementProfile>
 
       <h2 className="mt-5 mb-2">Politics</h2>
+      <div style={{minHeight: '40px'}}>
+
+      </div>
       <div className="row mt-3">
         <div className="col-5">
           <h3 className="mb-3">Circle</h3>
           <SettlementCircle settlement={settlement}></SettlementCircle>
         </div>
         <div className="col-7">
-          <h3 className="mb-3">{phase?.label} (<span style={{color: (phase?.countdown - currentCountdown < 10) ? 'red' : 'inherit'}}>{phase?.countdown - currentCountdown}s</span>)</h3>
+          <h3 className="mb-3">
+            {phase?.label}&nbsp;
+            {(phase.countdown - currentCountdown > 0) && (<span style={{color: (phase?.countdown - currentCountdown < 10) ? 'red' : 'inherit'}}>{phase?.countdown - currentCountdown}s</span>)}
+          </h3>
           <div style={{minHeight: '800px'}}>
             <SettlementMotions settlement={settlement}></SettlementMotions>
           </div>
