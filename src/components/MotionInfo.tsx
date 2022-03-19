@@ -1,7 +1,7 @@
 import React from 'react';
 import { StatIcon } from './StatIcon';
 
-export const MotionInfo = ({ motion, tabledBy, children }: any) => {return (
+export const MotionInfo = ({ motion, tabledBy, children, showEffects = false }: any) => {return (
   <div>
     <div className="d-flex justify-content-between">
       <div className="large font-weight-bold">
@@ -13,12 +13,14 @@ export const MotionInfo = ({ motion, tabledBy, children }: any) => {return (
     </div>
     <div className="d-flex justify-content-between">
       <div>
-      {motion.effects.map((effect: any, ii: number) => (
-        <span key={ii} className="d-inline-block text-left" style={{width: '55px', color: effect.amount > 0 ? 'green' : effect.amount < 0 ? 'crimson' : 'initial'}}>
-          <StatIcon mode='modifier' stat={effect.stat} value={effect.amount}></StatIcon>
-          &nbsp;
-        </span>
-      ))}
+        {showEffects && (
+          motion.effects.map((effect: any, ii: number) => (
+            <span key={ii} className="d-inline-block text-left" style={{width: '55px', color: effect.amount > 0 ? 'green' : effect.amount < 0 ? 'crimson' : 'initial'}}>
+              <StatIcon mode='modifier' stat={effect.stat} value={effect.amount}></StatIcon>
+              &nbsp;
+            </span>
+          ))
+        )}
       </div>
       <div>
         {children}

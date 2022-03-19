@@ -2,7 +2,7 @@ import React from 'react';
 import { stats } from '../models/stats.model';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
-export const StatIcon = ({ stat, value, mode, color, showOverlay = false }: any) => {
+export const StatIcon = ({ stat, value, mode, color, showOverlay = true }: any) => {
   const placement = 'top';
   const baseElement = (
     <div className={`d-inline-flex justify-content-start ${showOverlay ? 'stat__wrapper' : ''} align-items-center`}>

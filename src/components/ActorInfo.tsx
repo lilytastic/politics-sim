@@ -2,12 +2,12 @@ import React from 'react';
 import { StatIcon } from './StatIcon';
 import { ConnectedProps, connect } from 'react-redux';
 import { State } from '../store/reducers';
-import { ActorWithStateAndOffices, returnActorWithStateAndOffices } from '../models/actor.model';
+import { ActorWithStateAndOffices } from '../models/actor.model';
 import { getAssociatedVoteColor } from '../helpers/politics.helpers';
 import { getById } from '../helpers/entity.helpers';
 import { PHASES } from '../models/phase.model';
 
-export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion}: Props) => {
+export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion, showPositions = false }: Props) => {
   return (
     <div>
       <div className="row">
@@ -22,11 +22,13 @@ export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion}:
       </div>
       {
       <div className="d-flex">
-        {actor.state.positions.map(position => (
-          <div key={position.stat} style={{ opacity: position.passion / 100.0 }}>
-            <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'inherit'}></StatIcon>
-          </div>
-        ))}
+        {showPositions && (
+          actor.state.positions.map(position => (
+            <div key={position.stat} style={{ opacity: position.passion / 100.0 }}>
+              <StatIcon stat={position.stat} color={position.attitude !== 'raise' ? 'crimson' : 'inherit'}></StatIcon>
+            </div>
+          ))
+        )}
       </div>
       }
       {phase?.id !== PHASES.TABLE.id && inspectedMotion !== '' ? (
@@ -39,7 +41,7 @@ export const ActorInfo = ({ actor, motionVotes, actors, phase, inspectedMotion}:
             ) : actor.voteWeight > 0 ? 'Vote pending' : `Cannot vote`}
             {!!motionVotes[inspectedMotion]?.[actor.id]?.purchaseAgreement && (
               <span>
-                &nbsp;as a favour to {getById(actors, motionVotes[inspectedMotion]?.[actor.id]?.purchaseAgreement.purchasedBy)?.name}&nbsp;&nbsp; <StatIcon stat='capital' value={motionVotes[inspectedMotion][actor.id]?.purchaseAgreement.amountSpent}></StatIcon>
+                &nbsp;as a favour to {getById(actors, motionVotes[inspectedMotion]?.[actor.id]?.purchaseAgreement?.purchasedBy ?? '')?.name}&nbsp;&nbsp; <StatIcon stat='capital' value={motionVotes[inspectedMotion][actor.id]?.purchaseAgreement?.amountSpent}></StatIcon>
               </span>
             )}
           </div>
@@ -69,7 +71,7 @@ const connector = connect(
 );
 
 type PropsFromRedux = ConnectedProps<typeof connector>
-type Props = PropsFromRedux & {actor: ActorWithStateAndOffices};
+type Props = PropsFromRedux & {actor: ActorWithStateAndOffices, showPositions?: boolean};
 
 export default connector(ActorInfo);
 

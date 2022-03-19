@@ -15,10 +15,6 @@ export const SettlementView = ({settlement, policies, phase, currentCountdown}: 
       <h1 className="mb-3">{settlement.name}</h1>
       <SettlementProfile settlement={settlement} policies={policies}></SettlementProfile>
 
-      <h2 className="mt-5 mb-2">Politics</h2>
-      <div style={{minHeight: '40px'}}>
-
-      </div>
       <div className="row mt-3">
         <div className="col-5">
           <h3 className="mb-3">Circle</h3>

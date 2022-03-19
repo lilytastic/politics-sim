@@ -3,14 +3,16 @@ import { StatIcon } from "../components/StatIcon";
 import { PolicyBaseData } from '../models/policy.model';
 import FlipMove from 'react-flip-move';
 
-export const SettlementProfile = ({settlement, policies}: {settlement: any, policies: PolicyBaseData[]}) => {
+export const SettlementProfile = ({settlement, policies, showCulture}: {settlement: any, showCulture?: boolean, policies: PolicyBaseData[]}) => {
   return (
     <div>
-      <ul className="d-flex flex-wrap" style={{ width: '250px' }}>
-        {Object.keys(settlement?.derived?.profile).map(x => (
-          <li key={x} style={{ minWidth: '60px' }}><StatIcon stat={x} value={settlement?.derived?.profile[x]}></StatIcon></li>
-        ))}
-      </ul>
+      {showCulture && (
+        <ul className="d-flex flex-wrap" style={{ width: '250px' }}>
+          {Object.keys(settlement?.derived?.profile).map(x => (
+            <li key={x} style={{ minWidth: '60px' }}><StatIcon stat={x} value={settlement?.derived?.profile[x]}></StatIcon></li>
+          ))}
+        </ul>
+      )}
       <ul>
         <FlipMove>
           {Object.keys(settlement?.state?.policies).map(key => {
