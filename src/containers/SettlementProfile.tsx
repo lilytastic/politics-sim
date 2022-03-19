@@ -9,7 +9,7 @@ export const SettlementProfile = ({settlement, policies, showCulture}: {settleme
       {showCulture && (
         <ul className="d-flex flex-wrap" style={{ width: '250px' }}>
           {Object.keys(settlement?.derived?.profile).map(x => (
-            <li key={x} style={{ minWidth: '60px' }}><StatIcon stat={x} value={settlement?.derived?.profile[x]}></StatIcon></li>
+            <li key={x} style={{ minWidth: '60px' }}><StatIcon stat={x} value={settlement?.derived?.profile[x]} /></li>
           ))}
         </ul>
       )}
@@ -24,9 +24,15 @@ export const SettlementProfile = ({settlement, policies, showCulture}: {settleme
                   {policy?.label}
                 </div>
                 &nbsp;
-            <div className="d-inline-block font-weight-bold" style={{ minWidth: '100px' }}>{stance?.label}</div>
+                <div className="d-inline-block font-weight-bold" style={{ minWidth: '100px' }}>{stance?.label}</div>
                 &nbsp;
-            {stance?.effects.map(x => (<span key={x.stat} style={{ minWidth: '60px' }} className="d-inline-block"><StatIcon stat={x.stat} mode='modifier' value={x.amount}></StatIcon></span>))}
+                {showCulture && (
+                  stance?.effects.map(x => (
+                    <span key={x.stat} style={{ minWidth: '60px' }} className="d-inline-block">
+                      <StatIcon stat={x.stat} mode='modifier' value={x.amount} />
+                    </span>
+                  ))
+                )}
               </li>
             );
           })}
